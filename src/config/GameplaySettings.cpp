@@ -554,7 +554,7 @@ GameplaySettings GameplaySettings::Load(const std::string& filename) {
     // Optional RPG defaults use the same bounded F8 snapshot, while availability comes only from owned caches.
     auto& rpg=result.rpg;rpg.enabled=enabled("RPG","Enabled");rpg.guidance=enabled("RPG","GuidanceByDefault");
     rpg.available=!result.warcraftOnly && OptionalWeaponAssets::Rpg(std::filesystem::path(filename).parent_path());
-    rpg.radius=std::max(32.f,number("RPG","Radius",600,3000));
+    rpg.radius=std::max(32.f,number("RPG","Radius",1000,3000));
     // Upgrade only the former stock blast, including an old config loaded directly with F8.
     auto blastVersion=text("RPG","BlastVersion","1");
     if((blastVersion=="1" || blastVersion.empty()) && rpg.radius==375)rpg.radius=525;
@@ -628,6 +628,8 @@ GameplaySettings GameplaySettings::Load(const std::string& filename) {
     };
     upgradeStock("RPG","DamageVersion",2,100,1800,result.damage[WeaponSlots::RPG]);
     upgradeStock("RPG","BlastVersion",3,525,600,rpg.radius);
+    // Expand the previous stock blast once; existing linear 3D falloff still reaches zero at the edge.
+    upgradeStock("RPG","BlastVersion",4,600,1000,rpg.radius);
     upgradeStock("HEGrenade","DamageVersion",3,300,600,result.damage[WeaponSlots::HE]);
     upgradeStock("M3","MultiplierVersion",2,3,6,result.heroMultiplier[WeaponSlots::M3]);
     upgradeStock("XM1014","MultiplierVersion",2,2.4f,4.8f,result.heroMultiplier[WeaponSlots::XM1014]);

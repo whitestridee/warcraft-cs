@@ -33,7 +33,7 @@ $freshEconomy=Join-Path $folder 'dollar-defaults.ini'
 @('[Buy]','Radius=720') | Set-Content -LiteralPath $freshEconomy -Encoding ascii
 Update-GameplayConfig $template $freshEconomy
 $freshText=Get-Content -LiteralPath $freshEconomy -Raw
-foreach($expected in @('Currency=dollars','StartingMoney=800','ChancePercent=0.5','Radius=600','Damage=1800','Radius=720')) {
+foreach($expected in @('Currency=dollars','StartingMoney=800','ChancePercent=0.5','Radius=1000','Damage=1800','Radius=720')) {
     if(!$freshText.Contains($expected)){throw "Economy/loot default missing: $expected"}
 }
 # Semicolon custom actions survive; only the former squad default migrates to Y.
@@ -492,8 +492,8 @@ foreach($oldRadius in @('375','900')) {
         @('[RPG]',('Radius='+$oldRadius),'Damage=777',$(if($versioned){'BlastVersion=2'}else{'; old stock format'})) | Set-Content -LiteralPath $blastConfig -Encoding ascii
         Update-GameplayConfig $template $blastConfig
         $blastText=Get-Content -LiteralPath $blastConfig -Raw
-        $expected=if($oldRadius -eq '375' -and !$versioned){'600'}else{$oldRadius}
-        if(!$blastText.Contains('Radius='+$expected) -or !$blastText.Contains('BlastVersion=3') -or !$blastText.Contains('Damage=777')){throw 'RPG stock migration lost a custom blast setting.'}
+        $expected=if($oldRadius -eq '375' -and !$versioned){'1000'}else{$oldRadius}
+        if(!$blastText.Contains('Radius='+$expected) -or !$blastText.Contains('BlastVersion=4') -or !$blastText.Contains('Damage=777')){throw 'RPG stock migration lost a custom blast setting.'}
         $blastHash=(Get-FileHash $blastConfig).Hash;Update-GameplayConfig $template $blastConfig
         if((Get-FileHash $blastConfig).Hash -ne $blastHash){throw 'RPG stock migration is not idempotent.'}
     }
@@ -563,7 +563,7 @@ foreach($case in @(@('100','','600'),@('100','1','600'),@('300','2','600'),@('30
 # Current balance upgrades migrate only stock, preserve custom/versioned opt-backs and never repeat.
 foreach($spec in @(
     @('RPG','Damage','DamageVersion',2,'100','1800'),
-    @('RPG','Radius','BlastVersion',3,'525','600'),
+    @('RPG','Radius','BlastVersion',4,'600','1000'),
     @('HEGrenade','Damage','DamageVersion',3,'300','600'),
     @('M3','HeroMultiplier','MultiplierVersion',2,'3','6'),
     @('XM1014','HeroMultiplier','MultiplierVersion',2,'2.4','4.8'))) {

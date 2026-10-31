@@ -39,7 +39,7 @@ int main() {
     assert(settings.economy.currency==EconomySettings::Currency::Dollars && settings.economy.startingMoney==800);
     assert(settings.economy.killReward==200 && settings.economy.maximumMoney==16000);
     assert(settings.weaponDrops.enabled && settings.weaponDrops.chancePercent==.5f);
-    assert(settings.rpg.radius==600 && settings.damage[WeaponSlots::RPG]==1800);
+    assert(settings.rpg.radius==1000 && settings.damage[WeaponSlots::RPG]==1800);
     assert(settings.damage[WeaponSlots::HE]==600 && settings.heroMultiplier[WeaponSlots::M3]==6 && settings.heroMultiplier[WeaponSlots::XM1014]==4.8f);
     assert(settings.ContactDamage(WeaponSlots::M3,false,100)==600 && std::abs(settings.ContactDamage(WeaponSlots::XM1014,false,100)-480)<.001f);
     assert(settings.ContactDamage(WeaponSlots::RPG,false,100)==1800 && settings.ContactDamage(WeaponSlots::HE,false,100)==600);
@@ -50,7 +50,7 @@ int main() {
     assert(economyReload.economy.killReward==200 && !economyReload.weaponDrops.enabled);
     assert(economyReload.weaponDrops.chancePercent==100 && economyReload.weaponDrops.lifetimeSeconds==1);
     assert(economyReload.weaponDrops.pickupRadius==160 && economyReload.weaponDrops.maximumDrops==1);
-    assert(economyReload.rpg.radius==600 && economyReload.damage[WeaponSlots::RPG]==1800);
+    assert(economyReload.rpg.radius==1000 && economyReload.damage[WeaponSlots::RPG]==1800);
     WritePrivateProfileStringA("Economy","Currency","broken",economyPath.c_str());
     WritePrivateProfileStringA("WeaponDrops","Enabled","broken",economyPath.c_str());
     WritePrivateProfileStringA("WeaponDrops","ChancePercent","nan",economyPath.c_str());
@@ -58,7 +58,7 @@ int main() {
     assert(economyReload.economy.currency==EconomySettings::Currency::Dollars && economyReload.weaponDrops.enabled && economyReload.weaponDrops.chancePercent==.5f);
     // Direct F8 reload upgrades the old stock blast once; a versioned custom radius remains editable.
     WritePrivateProfileStringA("RPG","Radius","375",economyPath.c_str());
-    assert(GameplaySettings::Load(economyPath).rpg.radius==600);
+    assert(GameplaySettings::Load(economyPath).rpg.radius==1000);
     WritePrivateProfileStringA("RPG","BlastVersion","2",economyPath.c_str());
     assert(GameplaySettings::Load(economyPath).rpg.radius==375);
     DeleteFileA(economyPath.c_str());
@@ -828,7 +828,7 @@ int main() {
     // Startup/F8 upgrades old stock and preserves custom, disabled and explicit newer-version values.
     for(const auto& tuning:std::vector<std::tuple<const char*,const char*,const char*,int,int,float,float>>{
         {"RPG","Damage","DamageVersion",2,WeaponSlots::RPG,100,1800},
-        {"RPG","Radius","BlastVersion",3,-1,525,600},
+        {"RPG","Radius","BlastVersion",4,-1,600,1000},
         {"HEGrenade","Damage","DamageVersion",3,WeaponSlots::HE,300,600},
         {"M3","HeroMultiplier","MultiplierVersion",2,-2,3,6},
         {"XM1014","HeroMultiplier","MultiplierVersion",2,-3,2.4f,4.8f}}) {

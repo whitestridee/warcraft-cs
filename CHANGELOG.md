@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Move carried C4 into the Bombs group with grenades, hide its retired separate column and retain Half-Life on key 6. Preserve purchase/planting and stable inventory IDs.
+- Increase ordinary RPG stock radius from 600 to 1000 while retaining peak damage 1800 and linear 3D falloff to zero at the edge. BlastVersion=4 upgrades former stock once, preserving custom radii and explicit opt-backs; F8 affects new rockets only.
+
 ## 0.17.0 — 2026-10-31
 
 - Publish [downloads, upgrade instructions and complete Release Notes](docs/RELEASE-0.17.0.md), with direct downloads first, both launchers, native-free public ZIPs, updated current-version guides and compact launcher summaries.
