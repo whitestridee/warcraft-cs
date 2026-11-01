@@ -1,6 +1,7 @@
 #pragma once
 #include "MovementSettings.hpp"
 #include "MovementSurface.hpp"
+#include "WaterContact.hpp"
 
 struct MoveInput {
     float forward = 0, right = 0, yaw = 0;
@@ -8,6 +9,7 @@ struct MoveInput {
     // Spell roots/stuns stop horizontal momentum and new jumps while gravity continues.
     bool immobilized = false;
     bool stanceLocked = false;
+    bool waterExit = false; // Native shore probe permits an exit; the usual body sweeps still own clearance.
 };
 
 class MovementPhysics {
@@ -19,6 +21,14 @@ public:
     void Reset(float floor);
     void Configure(const MovementSettings& settings) { settings_ = settings; }
     void Step(const MoveInput& input, float dt, float weaponSpeed);
+    void SetWater(const WaterContact& water);
+    bool Swimming() const {return swimming_;}
+    bool SwimmingEnabled() const {return settings_.swimming.enabled && waterAllowed_;}
+    void AllowSwimming(bool allowed) {waterAllowed_=allowed;if(!allowed)SetWater({});}
+    bool Wet() const {return water_.present && feetZ_<=water_.surface;}
+    float WaterLevel() const {return water_.surface;}
+    float WaterExitHeight() const {return settings_.swimming.exitHeight;}
+    float WaterExitReach() const {return settings_.swimming.exitReach;}
     void ResolveFloor(float floor);
     void ResolveClassicFloor(float floor);
     void ResolveSurface(const MovementSurface& surface);
@@ -50,6 +60,10 @@ public:
     float Duck() const { return duck_; }
     bool Grounded() const { return grounded_; }
 private:
+    void Swim(const MoveInput& input,float dt,float weaponSpeed);
+    float FloatFeet() const;
+    WaterContact water_;
+    bool swimming_=false,waterAllowed_=true,waterJump_=false;
     float vx_ = 0, vy_ = 0, vz_ = 0, feetZ_ = 0, duck_ = 0;
     float previousFeetZ_ = 0;
     float previousDuck_ = 0;

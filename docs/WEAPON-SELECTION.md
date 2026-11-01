@@ -5,15 +5,15 @@
 Armed F6 keeps every supported weapon you own. Selecting another weapon does not discard the
 others or impose a primary/pistol carry limit. The menu previews a choice before equipping it.
 
-With Tab item-number mode off, the first six weapon bindings open these categories:
+With Tab item-number mode off, the retained weapon bindings open these categories:
 
 | Default key | Category |
 | --- | --- |
 | 1 | Primary: rifles, sniper rifles, SMGs, machine guns and shotguns |
 | 2 | Pistols |
 | 3 | Melee weapons |
-| 4 | Grenades |
-| 5 | C4 |
+| 4 | Bombs: C4, HE, Flashbang and Smoke |
+| 5 | Unassigned; the separate C4 group is retired |
 | 6 | Half-Life: available Crowbar, Tau Cannon, Gluon Gun and RPG |
 
 Press the same category again to highlight the next carried weapon in that group. Wheel up/down
@@ -46,3 +46,5 @@ Missing/malformed values use defaults; finite numeric values are clamped. Startu
 preferences, and updates add missing keys without replacing custom values or the Tab default.
 
 Expanded PRIMARY inventories display a moving window of up to eight rows around the highlighted weapon. Category keys and wheel still visit every owned primary, including the new TMP, UMP45, FAMAS, Galil and G3SG1; the footer stays within the screen.
+
+C4 shares the **BOMBS** stack with carried grenades; its old separate column is hidden. Half-Life remains on key 6. Buying C4 still uses B → 8 Equipment → 3, and selecting it never plants or spends a charge.

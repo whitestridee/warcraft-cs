@@ -257,6 +257,15 @@ void RuneCombatScene::Tick(ShooterController& controller,uintptr_t base,const ch
         else if(BackgroundGameplay::Enabled() && command=="nuclearinspect") {
             wc3::Log("fixture nuclear textOpen=%d selected=%d active=%d remaining=%.2f age=%.2f serial=%u ammo=%d gold=%d speed=%.2f",controller.TextInputOpen(),controller.NuclearSelected(),controller.NuclearBomb().Active(),controller.NuclearBomb().Remaining(),controller.NuclearBomb().Age(),controller.ShotSerial(),controller.Ammo(),wc3::GetPlayerState(wc3::GetLocalPlayer(),1),controller.DisplaySpeed());
         }
+        else if(BackgroundGameplay::Enabled() && command=="rpgblastscene") {
+            // Disposable radial targets verify normal RPG falloff without nuclear policy or desktop input.
+            party.clear();float x=-1000,y=-1000,angle=0;
+            const float dx[]={0,650,0,-1100},dy[]={300,0,-950,0};
+            for(int i=0;i<4;++i){float px=x+dx[i],py=y+dy[i];auto target=wc3::CreateUnit(wc3::Player(12),0x68666F6F,&px,&py,&angle);party.push_back(target);if(target)wc3::PauseUnit(target,TRUE);
+                px=wc3::Real(wc3::GetUnitX(target));py=wc3::Real(wc3::GetUnitY(target));
+                wc3::Log("fixture RPG radial index=%d unit=%08X x=%.1f y=%.1f z=%.1f hp=%.1f",i,target,px,py,wc3::Ground(px,py)+wc3::Real(wc3::GetUnitFlyHeight(target))+32,wc3::Real(wc3::GetUnitState(target,0)));}
+            controller.TestAimPoint(x,y,8);
+        }
         else if(BackgroundGameplay::Enabled() && command=="nuclearimpactscene") {
             // Include an allied tower and Avul hostile tower/creature to verify the requested death policy.
             party.clear();nuclearScenery.clear();float x=-1000,y=-1000,angle=0,scale=1;

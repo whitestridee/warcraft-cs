@@ -1,0 +1,6 @@
+- Added automatic surface swimming in deep water with slower paddling and smooth buoyancy.
+- Added Space exits toward reachable banks and canal edges while retaining solid collision.
+- Added editable Swimming settings with F8 reload and preserved update preferences.
+- Preserved bridge support and solid collision across classic, hull and recovery movement.
+- Fixed the visible Town Hall militia-alarm crash during combat.
+- Changed carried C4 to Bombs and ordinary RPG radius to 1000 with distance falloff.

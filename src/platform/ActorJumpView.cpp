@@ -1,5 +1,6 @@
 #include "GameBuild.hpp"
 #include "ActorJumpView.hpp"
+#include "SpriteTransform.hpp"
 #include <cmath>
 #include <cstring>
 
@@ -14,13 +15,22 @@ void ActorJumpView::Install(uintptr_t base,Hook hook) {
     if(installed)context_=this;
     wc3::Log("Actor jump skinning adapter verified=%d installed=%d",valid,installed);
 }
-void ActorJumpView::Begin(wc3::Handle unit,float feet,bool refreshPose) {
+void ActorJumpView::Begin(wc3::Handle unit,float feet,bool refreshPose,bool swimming) {
     End();if(!unit || !original_){Reset();return;}
     float x=wc3::Real(wc3::GetUnitX(unit)),y=wc3::Real(wc3::GetUnitY(unit));
     float lift=feet-wc3::Ground(x,y);auto object=wc3::UnitObject(unit);
     if(!object || !std::isfinite(lift)){Reset();return;}
     auto sprite=*reinterpret_cast<uintptr_t*>(object+0x28);if(!sprite){Reset();return;}
     auto model=*reinterpret_cast<uintptr_t*>(sprite+0x20);if(!model){Reset();return;}
+    // Ground includes the water plane, but a land unit's sprite can remain on the bed.
+    // Wading and a shore-exit arc still need that real base after buoyancy stops.
+    // Native flight retains its original lift; no native height/pathing is changed.
+    ModelTransform transform;
+    float water=0,flight=wc3::Real(wc3::GetUnitFlyHeight(unit));
+    if((swimming || (std::abs(flight)<=.01f && wc3::WaterSurface(x,y,water))) && SpriteTransform::Read(sprite,transform)) {
+        lift=feet+flight-transform.position[2];
+        if(!std::isfinite(lift)){Reset();return;}
+    }
     if(unit!=unit_ || model!=model_)Reset();
     unit_=unit;sprite_=sprite;model_=model;lift_=lift;thread_=GetCurrentThreadId();
     // Main-body skinning happens before RenderWorld. Reuse its latest native inputs, not a stale root matrix.

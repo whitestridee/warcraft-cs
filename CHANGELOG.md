@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Add automatic surface swimming on verified 1.26a native water in classic/hull/recovery, with configurable depth, speed, acceleration, drag, buoyancy and eye clearance. Space toward a nearby reachable bank launches a bounded exit from canals; exit height/reach are configurable. Wading uses the bed; bridge riders, solid walls and shore collision remain distinct. F8 reloads the settings and updates preserve custom values. Use authored third-person swim clips with walk/stand fallback; unsupported hosts retain previous movement.
+- Fix the visible militia-alarm crash on 1.26a: run controller gameplay after completed world/UI/HUD submission, before the next native animation update. Damage callbacks can replace worker models without drawing uninitialized bone matrices; keep one elapsed-time movement tick per frame and retain the 1.27a presentation fallback.
+- Move carried C4 into the Bombs group with grenades, hide its retired separate column and retain Half-Life on key 6. Preserve purchase/planting and stable inventory IDs.
+- Increase ordinary RPG stock radius from 600 to 1000 while retaining peak damage 1800 and linear 3D falloff to zero at the edge. BlastVersion=4 upgrades former stock once, preserving custom radii and explicit opt-backs; F8 affects new rockets only.
+
 ## 0.17.0 — 2026-10-31
 
 - Publish [downloads, upgrade instructions and complete Release Notes](docs/RELEASE-0.17.0.md), with direct downloads first, both launchers, native-free public ZIPs, updated current-version guides and compact launcher summaries.

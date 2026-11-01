@@ -34,6 +34,8 @@ float AttackSurface(float x,float y,bool waterBlocks);
 float TerrainGround(float x, float y);
 // Query real walkable geometry above terrain; removed/dead bridges cease to supply this surface.
 bool WalkableSurface(float x, float y, float& height);
+// Verified native liquid presence/height; bridges and ordinary terrain are separate queries.
+bool WaterSurface(float x,float y,float& height);
 Handle PickOwnedUnit();
 bool SinglePlayer();
 // Neutral owners include hostile, passive, victim and extra slots in classic Warcraft.

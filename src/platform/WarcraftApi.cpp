@@ -30,6 +30,8 @@ using TerrainRoot = uintptr_t (__cdecl*)();
 using TerrainHeight = float (__thiscall*)(uintptr_t, const float*, int);
 static TerrainRoot terrainRoot = nullptr;
 static TerrainHeight terrainHeight = nullptr;
+using WaterHeight=BOOL (__fastcall*)(const float*,float*);
+static WaterHeight waterHeight=nullptr;
 void OpenLog(const char* directory) {
     // Preserve the public native API while the dedicated adapter owns session/file handling.
     DiagnosticLog::Open(directory);
@@ -56,7 +58,7 @@ bool Bind(HMODULE game) {
 #include "NativeOffsets127a.inc"
 #undef NATIVE
         // Unresolved terrain/bridge internals use public Location/GetLocationZ instead of legacy machine code.
-        surfaceHeight=nullptr;terrainRoot=nullptr;terrainHeight=nullptr;cameraLimitsVerified=false;
+        surfaceHeight=nullptr;terrainRoot=nullptr;terrainHeight=nullptr;waterHeight=nullptr;cameraLimitsVerified=false;
         MarkBound();Log("Bound experimental Warcraft III %s native API",ActiveBuildName());return true;
     }
     // Verified 1.26a terrain/walkable-surface helper: ECX=terrain mode, EDX=raised-surface output,
@@ -73,6 +75,15 @@ bool Bind(HMODULE game) {
     }
     terrainRoot=reinterpret_cast<TerrainRoot>(base + wc3::Rva(0x1F5A0));
     terrainHeight=reinterpret_cast<TerrainHeight>(base + wc3::Rva(0x763F00));
+    // GetLocationZ's 24F3E0 wrapper calls F5D0(position,out); the latter resolves native
+    // water flags and the liquid plane through 7527F0, independently of bridge/terrain support.
+    const unsigned char waterSignature[]={0x52,0x51,0xE8};int rootCall=0,waterCall=0;
+    std::memcpy(&rootCall,reinterpret_cast<void*>(base+0xF5D3),4);
+    std::memcpy(&waterCall,reinterpret_cast<void*>(base+0xF5DA),4);
+    bool waterVerified=!std::memcmp(reinterpret_cast<void*>(base+0xF5D0),waterSignature,sizeof(waterSignature)) &&
+        *reinterpret_cast<unsigned char*>(base+0xF5D9)==0xE8 && 0xF5D7+rootCall==0x1F5A0 && 0xF5DE+waterCall==0x7527F0;
+    waterHeight=waterVerified ? reinterpret_cast<WaterHeight>(base+0xF5D0) : nullptr;
+    Log("Native liquid-surface adapter verified=%d",waterVerified);
     nativeBase = base;
     // The camera getter, generation resolver and scalar clamp must match this owned 1.26a layout.
     const unsigned char cameraGetter[]={0x8B,0x81,0x54,0x02,0x00,0x00,0xC3};
@@ -139,6 +150,12 @@ float TerrainGround(float x, float y) {
     if (!terrainRoot || !terrainHeight) return Ground(x,y);
     float position[]={x,y,0};
     return terrainHeight(terrainRoot(),position,-1);
+}
+bool WaterSurface(float x,float y,float& height) {
+    if(!waterHeight || !std::isfinite(x) || !std::isfinite(y))return false;
+    float point[]={x,y,0},level=0;
+    if(!waterHeight(point,&level) || !std::isfinite(level))return false;
+    height=level;return true;
 }
 std::string UnitModelPath(int type) {
     // No 1.26a internal layout is assumed on the experimental host.

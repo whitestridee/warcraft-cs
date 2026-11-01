@@ -124,6 +124,8 @@ function Update-GameplayConfig([string]$Template,[string]$Destination) {
     foreach($upgrade in @(
         @('RPG','Damage','DamageVersion',2,100,1800),
         @('RPG','Radius','BlastVersion',3,525,600),
+        # The wider stock blast preserves custom radii and explicit version-4 opt-backs.
+        @('RPG','Radius','BlastVersion',4,600,1000),
         @('HEGrenade','Damage','DamageVersion',3,300,600),
         @('M3','HeroMultiplier','MultiplierVersion',2,3,6),
         @('XM1014','HeroMultiplier','MultiplierVersion',2,2.4,4.8))) {

@@ -1,5 +1,6 @@
 #include "../src/platform/NativeRockets.hpp"
 #include "../src/platform/NativeGrenades.hpp"
+#include "../src/platform/NativeBlast.hpp"
 #include <cassert>
 #include "../src/platform/SpriteTransform.hpp"
 #include <cstring>
@@ -133,13 +134,20 @@ int main() {
     NativeRockets rockets;GameplaySettings rpg;rpg.rpg.available=true;rpg.friendlyFirePercent=0;rpg.rpg.maxActive=1;
     Scene();collisionFilters.clear();cover={Bounds3{{60,-100,0},{62,100,300}}};
     assert(rockets.Launch(1,{0,0,96},{1,0,0},{},rpg));assert(!rockets.Launch(1,{0,0,96},{1,0,0},{},rpg));
-    // Later F8 damage/radius edits cannot alter the already launched 1800/600 blast snapshot.
-    assert(rpg.damage[WeaponSlots::RPG]==1800 && rpg.rpg.radius==600);
+    // Later F8 damage/radius edits cannot alter the already launched 1800/1000 blast snapshot.
+    assert(rpg.damage[WeaponSlots::RPG]==1800 && rpg.rpg.radius==1000);
     rpg.damage[WeaponSlots::RPG]=9999;rpg.rpg.radius=32;clockSeconds=.3f;assert(rockets.Tick(audio,1,false,{0,0,96},{1,0,0},3000));
     assert(hp[1]==1000 && hp[2]<1000 && hp[2]>-800 && hp[2]<100 && hp[10]<1000 && !rockets.Active(1));
     // Pathing-texture buildings may have zero native unit radius; rocket queries must still retain their model.
     assert(!collisionFilters.empty() && std::none_of(collisionFilters.begin(),collisionFilters.end(),[](bool value){return value;}));
     saved=damages;clockSeconds=2;rockets.Tick(audio,1,false,{0,0,96},{1,0,0},3000);assert(damages==saved);
+    // The real blast adapter scales damage continuously, including targets beyond the former 600-unit radius.
+    rockets.Reset();Scene();enumerated={2,3,6,9};for(int u:enumerated)hp[u]=10000;
+    auto oldX=wc3::GetUnitX;
+    wc3::GetUnitX=[](wc3::Handle u){return Bits(u==3 ? 500.f : u==6 ? 750.f : u==9 ? 1000.f : 0.f);};
+    assert(NativeBlast::Apply(1,101,{0,0,100},1800,1000,0,{},[]{return true;},"RPG"));
+    assert(hp[2]==8200 && hp[3]==9100 && hp[6]==9550 && hp[9]==10000);
+    wc3::GetUnitX=oldX;
     rockets.Reset();Scene();rpg.damage[WeaponSlots::RPG]=100;
     assert(rockets.Launch(1,{0,0,96},{1,0,0},{},rpg));clockSeconds=.2f;rockets.Tick(audio,1,false,{0,0,96},{1,0,0},3000);
     assert(rockets.Visuals().size()==1);auto pausedFlight=rockets.Visuals()[0].position;

@@ -7,7 +7,7 @@
 class UnitLocomotion {
 public:
     void Update(wc3::Handle unit,double now,bool grounded,float speed,bool blocked,
-        const ThirdPersonSettings& settings,bool walking=false);
+        const ThirdPersonSettings& settings,bool walking=false,bool swimming=false);
     void Release();
     void Reset() {unit_=0;type_=0;ownsRate_=false;poseKnown_=false;motion_.Reset();modelPath_.clear();}
 private:
@@ -20,6 +20,7 @@ private:
     std::string modelPath_;
     ModelMotionProfile profile_;
     bool ownsRate_=false,poseKnown_=false;
+    bool swimming_=false;
     HeroMotionState::Pose pose_=HeroMotionState::Pose::Stand;
     HeroMotionState motion_;
     DWORD lastRepair_=0;

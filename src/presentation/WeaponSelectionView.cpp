@@ -14,15 +14,18 @@ void WeaponSelectionView::Draw(const ShooterController& controller,int width,int
     // Start below the existing four-line command hints, keeping the complete primary stack above the HUD.
     float x=width*.025f,y=height*.16f,column=width*.12f,header=height*.047f,row=height*.066f;
     auto available=controller.AvailableWeapons();
+    // Hide the retired C4 column while retaining existing number bindings, including Half-Life on 6.
+    int visibleColumn=0;float listX=x;
     for(int g=1;g<=WeaponSlots::SelectionGroups;++g) {
-        float gx=x+(g-1)*column;
+        if(!*WeaponSelection::Label(g))continue;
+        float gx=x+visibleColumn++*column;if(g==group)listX=gx;
         glColor4f(0,0,0,.8f);Rect(gx,y,column-3,header);
         glColor4f(1,.72f,.22f,1);char label[80];
         auto key=controller.Shortcut(ShortcutAction(int(ShortcutAction::Weapon1)+g-1));
         sprintf_s(label,"%s %s",key.c_str(),WeaponSelection::Label(g));text(gx+5,y+header*.65f,label);
         if(g==group){glColor4f(1,.72f,.22f,1);Rect(gx,y+header-2,column-3,2);}
     }
-    auto items=WeaponSelection::Items(group,available);float listX=x+(group-1)*column,listWidth=width*.225f;
+    auto items=WeaponSelection::Items(group,available);float listWidth=width*.225f;
     size_t selectedIndex=0;for(size_t i=0;i<items.size();++i)if(items[i]==pending)selectedIndex=i;
     size_t count=std::min(size_t(8),items.size()),first=std::min(selectedIndex>3 ? selectedIndex-3 : 0,items.size()-count);
     for(size_t i=first;i<first+count;++i) {

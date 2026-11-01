@@ -1,7 +1,9 @@
 #pragma once
+#include "SwimmingSettings.hpp"
 
 // GoldSrc units are converted only by physics; collision uses Warcraft world units.
 struct MovementSettings {
+    SwimmingSettings swimming;
     // Classic is the requested default; recovery and hull remain selectable without resetting motion.
     bool classicCollision=true;
     bool platformRecovery=false;

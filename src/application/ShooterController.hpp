@@ -200,6 +200,8 @@ public:
     wc3::Handle HiddenActor() const {return ThirdPerson() ? 0 : ViewActor();}
     // Physical feet are a presentation snapshot; the render adapter never changes native fly height.
     float ActorFeet() const {return movement_.FeetZ();}
+    // Rendered swimmers use their native sprite base rather than the liquid support plane.
+    bool Swimming() const {return movement_.Swimming();}
     // Aiming and camera submission share the same eye; collision and rendered body keep physical feet.
     float ViewEyeZ() const {return movement_.EyeZ()+(ThirdPerson() ? 0 : cameraHeight_.EyeOffset(movement_.EyeZ()-movement_.FeetZ(),movement_.BodyHeight()));}
     wc3::Handle JumpViewActor() const {return ThirdPerson() && !status_.contained && !status_.hidden ? ViewActor() : 0;}
@@ -233,6 +235,13 @@ public:
     wc3::Handle TestUnit() const { return Visible() ? unit_ : 0; }
 #endif
 #ifdef WCS_GAMEPLAY_TEST
+    void TestWaterState() const {
+        if(!unit_)return;float x=wc3::Real(wc3::GetUnitX(unit_)),y=wc3::Real(wc3::GetUnitY(unit_)),water=0,deck=0;
+        bool liquid=wc3::WaterSurface(x,y,water),bridge=wc3::WalkableSurface(x,y,deck);
+        // Copied native observations verify the real surface motor without exposing a production control path.
+        wc3::Log("fixture swimming x=%.3f y=%.3f feet=%.3f eye=%.3f swim=%d grounded=%d wet=%d liquid=%d water=%.3f bed=%.3f native=%.3f bridge=%d deck=%.3f speed=%.3f cameraEye=%.3f",
+            x,y,movement_.FeetZ(),ViewEyeZ(),movement_.Swimming(),movement_.Grounded(),movement_.Wet(),liquid,water,wc3::TerrainGround(x,y),wc3::Ground(x,y),bridge,deck,movement_.Speed(),wc3::Real(wc3::GetCameraEyePositionZ()));
+    }
     bool TestAimHead(wc3::Handle target,int side=0) {
         // Search only the disposable target's verified posed head surfaces, then use the ordinary contact path.
         float x=wc3::Real(wc3::GetUnitX(target)),y=wc3::Real(wc3::GetUnitY(target)),floor=wc3::Ground(x,y);
@@ -264,7 +273,9 @@ public:
     void TestHoldAttack(DWORD duration) {testAttackUntil_=GetTickCount()+std::min(duration,DWORD(10000));}
     void TestLogTarget() const {wc3::Log("fixture target hp=%.1f actorMana=%.1f",fixtureTarget_ ? wc3::Real(wc3::GetUnitState(fixtureTarget_,0)) : -1,wc3::Real(wc3::GetUnitState(unit_,2)));}
     // Match the real movement key-down path, including deliberate channel interruption.
-    void TestWalk(int key,DWORD duration,bool walking=false) {RequestSpellCancel();testWalkKey_=key;testWalking_=walking;testWalkUntil_=GetTickCount()+std::min(duration,DWORD(2000));}
+    void TestWalk(int key,DWORD duration,bool walking=false) {RequestSpellCancel();testWalkKey_=key;testWalking_=walking;testJumping_=false;testWalkUntil_=GetTickCount()+std::min(duration,DWORD(2000));}
+    // Exercise real simultaneous forward/Space input; this never grants an artificial shore contact.
+    void TestWaterExit(DWORD duration) {TestWalk(settings_.shortcuts.Key(ShortcutAction::Forward),duration);testJumping_=true;}
     void TestMapSky(const char* model) {
         auto frame=ui_ ? *reinterpret_cast<uintptr_t*>(ui_+0x3BC) : 0;
         if(frame)reinterpret_cast<void (__thiscall*)(uintptr_t,const char*)>(gameBase_+wc3::Rva(0x390590))(frame,model);
@@ -325,7 +336,7 @@ public:
 private:
 #ifdef WCS_GAMEPLAY_TEST
     bool testInputRoute_=false;
-    int testWalkKey_=0;bool testWalking_=false;DWORD testWalkUntil_=0,testAttackUntil_=0,testSecondaryUntil_=0;
+    int testWalkKey_=0;bool testWalking_=false,testJumping_=false;DWORD testWalkUntil_=0,testAttackUntil_=0,testSecondaryUntil_=0;
 #endif
     bool Pressed(int key);
     bool Down(int key) const;

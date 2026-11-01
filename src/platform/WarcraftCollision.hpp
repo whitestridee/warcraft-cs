@@ -10,6 +10,8 @@ public:
     void Configure(uintptr_t base) { base_=base;obstacles_.Configure(base);classic_.Configure(base); }
     void Reset() { obstacles_.Reset();classic_.Reset();terrain_.clear();modelPathing_=false;blockedLog_=0;ResetRecovery(); }
     void RequestRecovery() {recoveryRequested_=true;}
+    void UpdateWater(wc3::Handle unit,MovementPhysics& movement) const;
+    void PrepareWaterExit(wc3::Handle unit,MovementPhysics& movement,MoveInput& input) const;
     void ResetRecovery() {recovery_.Reset();actor_=0;havePosition_=false;recoveryRequested_=false;ridingDeck_=false;}
     void Move(wc3::Handle unit, MovementPhysics& movement, float dt);
 private:
