@@ -41,6 +41,7 @@
 #include "../../tests/RuneCombatScene.hpp"
 #include "../../tests/FramePresentationScene.hpp"
 #include "../../tests/MilitiaMorphScene.hpp"
+#include "../../tests/SwimmingScene.hpp"
 #endif
 #ifdef WCS_TREE_WHEEL_TEST
 #include "../../tests/TreeAndWheelScene.hpp"
@@ -227,7 +228,7 @@ static int __fastcall WorldHook(uintptr_t ui, uintptr_t unused) {
     // Both modes own movement/input, but only FPS filters out the controlled body.
     ActorRenderFilter::Begin(healthy ? controller.HiddenActor() : 0);
     // World submission queues model batches; keep the raised transform until their actual draw completes.
-    actorJumpView.Begin(healthy ? controller.JumpViewActor() : 0,controller.ActorFeet(),healthy && controller.ManualAttackAnimating());
+    actorJumpView.Begin(healthy ? controller.JumpViewActor() : 0,controller.ActorFeet(),healthy && controller.ManualAttackAnimating(),controller.Swimming());
     RECT portraitClient={};if(windowInput.Window())GetClientRect(windowInput.Window(),&portraitClient);
     portrait.BeginFrame(portraitClient.right,portraitClient.bottom,healthy && controller.Settings().showUnitHud ? controller.HudActor() : 0);
     int result = originalWorld(ui, unused);
@@ -345,6 +346,7 @@ static void FinishFrame(HDC dc,const char* route) {
 #ifdef WCS_GAMEPLAY_TEST
     // Morph fixtures must precede the NEXT native pose update, not create unskinned models during RenderWorld.
     if(healthy && worldReady)MilitiaMorphScene::Tick(controller,root);
+    if(healthy && worldReady)SwimmingScene::Tick(controller,root);
 #endif
     // Observe skipped frames too: a valid context alone does not establish an active FPS overlay.
     if (DiagnosticLog::Due(previous)) {

@@ -1,8 +1,10 @@
 #include "../src/movement/MovementPhysics.hpp"
+#include <algorithm>
 #include "MovementStrafeInput.hpp"
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
+#include <initializer_list>
 
 static void Require(bool condition, const char* description) {
     if (!condition) { std::fprintf(stderr, "FAIL: %s\n", description); std::exit(1); }
@@ -136,4 +138,31 @@ int main() {
     hopping.Step(hop, 1.f/60, 250);
     Require(hopping.Speed() <= 450.01f, "live cap changes must affect the next simulation step");
     std::puts("Movement invariants passed: running, stance, jumping, air strafing, bunnyhop, cap, falling, reload and status effects");
+    // Water selects its own finite surface motor; dry ground never consumes these controls.
+    for(int fps:{30,60,144}) {
+        MovementPhysics swimmer;swimmer.Reset(100);MoveInput paddle;paddle.forward=1;paddle.jump=true;
+        for(int frame=0;frame<fps*3;++frame) {swimmer.SetWater({true,300,0});swimmer.Step(paddle,1.f/fps,250);swimmer.ResolveFloor(0);}
+        Require(swimmer.Swimming() && !swimmer.Grounded(),"deep liquid is buoyancy, not a jumpable floor");
+        Require(std::abs(swimmer.EyeZ()-312)<.02f,"surface eye height agrees across frame rates");
+        Require(swimmer.Speed()<=243.751f && swimmer.Speed()>100,"swimming caps inherited and repeated-jump momentum");
+        paddle.immobilized=true;swimmer.Step(paddle,1.f/fps,250);
+        Require(swimmer.Speed()==0 && swimmer.Swimming(),"roots stop paddling without disabling buoyancy");
+        swimmer.SetWater({true,300,220});Require(!swimmer.Swimming(),"shallow water returns to normal movement");
+        swimmer.Reset(100);Require(!swimmer.Swimming(),"actor reset discards liquid contact");
+    }
+    MovementPhysics bridge;bridge.Reset(400);bridge.SetWater({true,300,0});
+    // An authorized shore exit is a single ballistic arc, not buoyancy reset or infinite water hopping.
+    MovementPhysics exit;exit.Reset(216);exit.SetWater({true,300,0});MoveInput shoreJump;shoreJump.jump=true;shoreJump.waterExit=true;
+    exit.Step(shoreJump,1.f/60,250);float exitPeak=exit.FeetZ();
+    Require(!exit.Swimming() && exit.VerticalVelocity()>0,"fresh authorized Space launches a shore exit");
+    for(int frame=0;frame<150;++frame) {
+        exit.SetWater({true,300,0});exit.Step(shoreJump,1.f/60,250);exitPeak=std::max(exitPeak,exit.FeetZ());
+    }
+    Require(exitPeak>420 && exitPeak<=428.1f && exit.Swimming(),"bounded exit arc falls back to swimming even while Space is held");
+    Require(!bridge.Swimming() && bridge.Grounded(),"supported body above the surface does not swim");
+    MovementPhysics waterAirborne;waterAirborne.Reset(600);waterAirborne.BeginFall();waterAirborne.SetWater({true,300,0});
+    Require(!waterAirborne.Swimming(),"air above water retains ordinary gravity");
+    MovementSettings noSwimming;noSwimming.swimming.enabled=false;waterAirborne.Configure(noSwimming);waterAirborne.Reset(100);waterAirborne.SetWater({true,300,0});
+    Require(!waterAirborne.Swimming(),"live swimming opt-out retains the legacy motor");
+    std::puts("Swimming invariants passed: buoyancy, depth, speed, roots, frame rates, airborne entry, support and opt-out.");
 }

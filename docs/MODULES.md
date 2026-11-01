@@ -162,6 +162,16 @@ The sweep owns approach/slide/retreat there, so native nearest-cell placement ne
 publishes a transient sprite relocation. Open-space unknown blockers retain native placement checks.
 `GameplaySettings` loads movement tuning; the controller applies that snapshot on startup and F8.
 
+`SwimmingSettings` and `WaterContact` extend the portable movement motor with surface buoyancy,
+bounded water speed and a separate drag/acceleration path. `WarcraftApi::WaterSurface` verifies the
+1.26a native liquid query used by GetLocationZ; it returns actual liquid presence/plane separately
+from terrain and walkable geometry. `MovementWater` shares contact, bridge-rider exclusion,
+bed support and native floatability policy across the two collision strategies. Solid/cliff
+sweeps remain authoritative. A directed shore probe permits one bounded Space exit arc without
+changing the collision solver or adding bunnyhop speed. The controller suppresses dry step/takeoff effects while swimming;
+`ModelMotionProfile`/`UnitLocomotion` select actual authored water clips or safe gait/idle fallback.
+The observing/input-driving `SwimmingScene` and authored Swimming.j map script are opt-in native fixtures.
+
 `RenderSettings` is part of that validated snapshot. `NativeFrameRate` verifies the supported native
 render-demand instruction, owns its one-byte in-memory override and paces presentation with the
 Windows performance counter and waitable timer. MaxFPS=0 restores the original operand. The runtime

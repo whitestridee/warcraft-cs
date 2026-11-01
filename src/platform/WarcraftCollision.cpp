@@ -2,6 +2,7 @@
 #include "DiagnosticLog.hpp"
 #include "MovementWorldBounds.hpp"
 #include "UnitCollisionProfile.hpp"
+#include "MovementWater.hpp"
 #include "../geometry/CylinderHull.hpp"
 #include <algorithm>
 #include <cmath>
@@ -91,10 +92,9 @@ MovementSurface WarcraftCollision::Floor(float x, float y, const MovementPhysics
     if (wc3::WalkableSurface(x, y, deck)) {
         support(deck);
     } else {
-        // GetLocationZ also supplies native shallow-water support. Retain it when no overhead deck
-        // is present, rather than lowering a Warcraft walker onto the submerged terrain mesh.
+        // Liquid-aware support uses the actual bed; an explicit swimming opt-out retains legacy water support.
         if(surface.walkable) {
-            float native=wc3::Ground(x,y);
+            float native=MovementWater::Ground(x,y,movement);
             if(std::isfinite(native) && native<=reachable+.01f)surface.height=std::max(surface.height,native);
         }
     }
@@ -208,6 +208,7 @@ bool WarcraftCollision::Clear(float x, float y, float oldX, float oldY, const Mo
         if (!wc3::IsTerrainPathable(&px, &py, 1)) continue;
         // A deck is also overhead clearance: its 2D pathing must not close a genuinely tall passage below it.
         if (wc3::WalkableSurface(px, py, deck) && (deck <= bottom + .01f || deck>=top-.01f)) continue;
+        if(MovementWater::Passable(px,py,movement))continue;
         bool knownObject = false;
         // The full body already cleared every known solid. Do not enlarge one to its native path cell
         // when only an empty corner of that cell overlaps the player's circular foot.
@@ -260,6 +261,7 @@ bool WarcraftCollision::Safe(float x,float y,float z,const MovementPhysics& move
 void WarcraftCollision::Recover(wc3::Handle unit,float x,float y,MovementPhysics& movement,const std::vector<Bounds3>& obstacles) {
     // Mode selection gates the complete recovery path, not just its automatic repair preference.
     if(!movement.PlatformRecovery())return;
+    if(movement.Swimming()){recoveryRequested_=false;ridingDeck_=false;return;} // Valid buoyancy is not a lost bridge or rescue checkpoint.
     auto terrain=Terrain(x,y,movement);
     float deck=0;
     // Remember actual support provenance. Someone who walked underneath a bridge is never
@@ -305,6 +307,7 @@ void WarcraftCollision::Recover(wc3::Handle unit,float x,float y,MovementPhysics
     lastX_=x;lastY_=y;havePosition_=true;
 }
 void WarcraftCollision::Move(wc3::Handle unit, MovementPhysics& movement, float dt) {
+    MovementWater::Update(unit,movement);
     // Select the complete pre-rework strategy, including its original landing resolver,
     // rather than approximating old movement by disabling individual recovery features.
     if(movement.ClassicCollision()){ResetRecovery();classic_.Move(unit,movement,dt);return;}
@@ -332,7 +335,7 @@ void WarcraftCollision::Move(wc3::Handle unit, MovementPhysics& movement, float 
     Ceiling(x,y,movement,obstacles);
     if (std::hypot(dx,dy)<.001f) {
         // Standing still needs floor resolution, but no collision rejection or blocked-movement telemetry.
-        movement.ResolveSurface(Floor(x,y,movement,obstacles));Recover(unit,x,y,movement,obstacles);return;
+        movement.ResolveSurface(Floor(x,y,movement,obstacles));Recover(unit,x,y,movement,obstacles);MovementWater::Update(unit,movement);return;
     }
     int steps = std::max(1, int(std::ceil(std::hypot(dx, dy) / 8)));
     // Eight-unit swept steps retain thin-wall collision at maximum bunnyhop speed.
@@ -391,4 +394,9 @@ void WarcraftCollision::Move(wc3::Handle unit, MovementPhysics& movement, float 
     Ceiling(x,y,movement,obstacles);
     movement.ResolveSurface(Floor(x, y,movement,obstacles));
     Recover(unit,x,y,movement,obstacles);
+    MovementWater::Update(unit,movement);
+}
+void WarcraftCollision::UpdateWater(wc3::Handle unit,MovementPhysics& movement) const {MovementWater::Update(unit,movement);}
+void WarcraftCollision::PrepareWaterExit(wc3::Handle unit,MovementPhysics& movement,MoveInput& input) const {
+    input.waterExit=MovementWater::ExitAvailable(unit,movement,input);
 }

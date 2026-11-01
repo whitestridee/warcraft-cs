@@ -276,6 +276,17 @@ GameplaySettings GameplaySettings::Load(const std::string& filename) {
     // Repair tuning and Home's search radius share the existing validated F8 snapshot.
     result.movement.recoverInvalidPosition=boolean("RecoverInvalidPosition",true);
     result.movement.recoveryDistance=std::max(64.f,number("Movement","RecoveryDistance",512,2048));
+    // Startup and F8 share one finite, bounded water contract; setup only inserts missing preferences.
+    auto& swimming=result.movement.swimming;
+    swimming.enabled=enabled("Swimming","Enabled");
+    swimming.minimumDepth=std::max(32.f,number("Swimming","MinimumDepth",96,512));
+    swimming.speedPercent=std::max(10.f,number("Swimming","SpeedPercent",65,100));
+    swimming.acceleration=std::max(1.f,number("Swimming","Acceleration",6,30));
+    swimming.drag=number("Swimming","Drag",4,20);
+    swimming.floatSeconds=std::max(.05f,number("Swimming","FloatSeconds",.2f,2));
+    swimming.eyeAboveWater=number("Swimming","EyeAboveWater",12,48);
+    swimming.exitHeight=number("Swimming","ExitHeight",128,192);
+    swimming.exitReach=std::max(32.f,number("Swimming","ExitReach",128,192));
     result.runePickupRadius=number("Runes","PickupRadius",160,400);
     result.runeAmmoAllWeapons=_stricmp(text("Runes","AmmoWeapons","all").c_str(),"current")!=0;
     auto damageMode=text("Damage","Mode","unit");

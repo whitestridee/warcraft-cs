@@ -16,6 +16,8 @@ struct HullSettings : MovementSettings {HullSettings(){classicCollision=false;pl
 float unitX=0,unitY=0;
 bool bridgeAlive=true,edge=false,nativeBlocked=false,cliff=false,invalidDeck=false;
 bool drop=false, prop=false, wall=false, slope=false, water=false;
+bool swimScene=false,swimWall=false,swimNativeBlocked=false;
+float canalBank=0; // A vertical canal edge exercises Space exits independently of the shallow beach.
 bool tree=false,canopyBounds=false;
 bool wideCliff=false;
 bool landingLedge=false;
@@ -24,6 +26,7 @@ bool ceiling=false,corner=false,stepUnderCeiling=false,cornerPathing=false;float
 float FaceDistance(float x,float y) {return x*std::cos(faceYaw)+y*std::sin(faceYaw);}
 float ledgeYaw=0,cliffRim=144;
 float actorRadius=0;
+float actorFlight=0;
 bool nativeCliffRim=false;
 float slopeGradient=.3f;
 bool narrowPassage=false;
@@ -34,7 +37,9 @@ int sideContact=0,sideRelocations=0;bool sideUnit=false;
 wc3::Bits Bits(float value) { wc3::Bits bits;std::memcpy(&bits,&value,4);return bits; }
 wc3::Bits __cdecl X(wc3::Handle) {return Bits(unitX);}
 wc3::Bits __cdecl Y(wc3::Handle) {return Bits(unitY);}
-BOOL __cdecl Blocked(float* x,float* y,int) {
+BOOL __cdecl Blocked(float* x,float* y,int kind) {
+    // Different masks deliberately disagree: owned common.j uses 6 for floatability, while 4 is harvest pathing.
+    if(swimScene)return kind==1 ? (canalBank || *x<500) : kind==6 ? swimNativeBlocked : TRUE;
     if(deckPatch)return FALSE;
     if(meshScene)return *x>=32 && *x<128;
     if(cliffFace)return FaceDistance(*x,*y)>=8 && FaceDistance(*x,*y)<=184;
@@ -56,7 +61,7 @@ wc3::Handle __cdecl World() { return 1; }
 wc3::Bits __cdecl Minimum(wc3::Handle) { return Bits(-4096); }
 wc3::Bits __cdecl Maximum(wc3::Handle) { return Bits(4096); }
 void __cdecl Remove(wc3::Handle) {}
-int __cdecl Level(float* x,float* y) { if(cliffFace)return FaceDistance(*x,*y)>=96 ? 3 : 2; return (drop || cliff) && *x>=32 ? (drop ? 1 : 3) : 2; }
+int __cdecl Level(float* x,float* y) { if(canalBank)return *x>=80 ? 3 : 2;if(cliffFace)return FaceDistance(*x,*y)>=96 ? 3 : 2; return (drop || cliff) && *x>=32 ? (drop ? 1 : 3) : 2; }
 void __cdecl Position(wc3::Handle,float* x,float* y) {
     // A clear center beside a cliff can still trigger native nearest-cell placement for its wider hull.
     if(nativeCliffRim && *x>0 && *x<8){unitX=*x+80;unitY=*y;return;}
@@ -81,6 +86,7 @@ void Trace(const char*,...) {}
 int (__cdecl* GetTerrainCliffLevel)(float*,float*)=Level;
 Bits (__cdecl* GetUnitX)(Handle)=X;
 Bits (__cdecl* GetUnitY)(Handle)=Y;
+Bits (__cdecl* GetUnitFlyHeight)(Handle)=[](Handle){return ::Bits(actorFlight);};
 BOOL (__cdecl* IsTerrainPathable)(float*,float*,int)=Blocked;
 void (__cdecl* SetUnitPosition)(Handle,float*,float*)=Position;
 void (__cdecl* SetUnitX)(Handle,float*)=SetX;
@@ -92,8 +98,9 @@ Bits (__cdecl* GetRectMaxX)(Handle)=Maximum;
 Bits (__cdecl* GetRectMaxY)(Handle)=Maximum;
 void (__cdecl* RemoveRect)(Handle)=Remove;
 float Real(Bits bits){float f;std::memcpy(&f,&bits,4);return f;}
-float TerrainGround(float x,float y){if(cliffFace)return 100+std::clamp((FaceDistance(x,y)-32)/128,0.f,1.f)*faceRise;return landingLedge ? (x*std::cos(ledgeYaw)+y*std::sin(ledgeYaw)>=32 ? 140.f : 100.f) : slope ? 100.f+x*slopeGradient : drop && x>=32 ? 0.f : cliff && x>=32 ? 180.f : 100.f;}
-float Ground(float x,float y){return TerrainGround(x,y)+(water ? 22.f : 0.f);}
+float TerrainGround(float x,float y){if(swimScene)return canalBank ? (x>=80 ? canalBank : 100.f) : 100+std::clamp((x-100)*.5f,0.f,200.f);if(cliffFace)return 100+std::clamp((FaceDistance(x,y)-32)/128,0.f,1.f)*faceRise;return landingLedge ? (x*std::cos(ledgeYaw)+y*std::sin(ledgeYaw)>=32 ? 140.f : 100.f) : slope ? 100.f+x*slopeGradient : drop && x>=32 ? 0.f : cliff && x>=32 ? 180.f : 100.f;}
+float Ground(float x,float y){return swimScene && x<500 ? std::max(300.f,TerrainGround(x,y)) : TerrainGround(x,y)+(water ? 22.f : 0.f);}
+bool WaterSurface(float x,float y,float& height){if(swimScene && x<(canalBank ? 80 : 500)){height=300;return true;}if(water){height=Ground(x,y);return true;}return false;}
 bool WalkableSurface(float x,float y,float& height){
     if(deckPatch){height=140;return x>=32 && x<=96;}
     if(!bridgeAlive || (edge && std::abs(y)>16))return false;
@@ -104,6 +111,7 @@ bool DiagnosticLog::Due(DWORD&,bool) { return false; }
 // The synthetic world replaces only native discovery; actual swept collision/physics runs unchanged.
 std::vector<Bounds3> MovementObstacles::Snapshot(wc3::Handle,float,float,float,bool,bool detailed,bool retainPlatforms) {
     details_.clear();
+    if(swimScene)return swimWall ? std::vector<Bounds3>{{{80,-200,100},{100,200,500}}} : std::vector<Bounds3>{};
     if(meshScene) {
         auto mesh=std::make_shared<CylinderMesh>();
         if(meshScene==4)AddMeshBox(*mesh,{{-500,-500,180},{500,500,200}});
@@ -199,7 +207,7 @@ int main(){
     // Water support from GetLocationZ is independent of a native walkable bridge deck.
     water=true;unitX=unitY=0;jumper.Reset(122);jumping.jump=false;
     for(int frame=0;frame<60;++frame){jumper.Step(jumping,1.f/60,250);collision.Move(1,jumper,1.f/60);}
-    Require(jumper.Grounded() && std::abs(jumper.FeetZ()-wc3::Ground(unitX,unitY))<.01f,"native shallow-water support must not become a false cliff drop");
+    Require(jumper.Grounded() && jumper.FeetZ()>=wc3::TerrainGround(unitX,unitY) && jumper.FeetZ()<=wc3::TerrainGround(unitX,unitY)+8,"shallow liquid follows its bed footprint without becoming a false cliff drop");
     water=slope=false;tree=true;
     auto treeWalk=[&](bool broad,float y) {
         canopyBounds=broad;unitX=0;unitY=y;jumper.Reset(100);
@@ -537,4 +545,45 @@ int main(){
         Require(unitX<3972,"retreat from the map edge remains usable");
     }
     std::puts("Warcraft classic/hull/recovery collision regressions passed.");
+    // A real floating path may reject native walking; both solvers still sweep solid walls and banks.
+    slope=false;swimScene=true;bridgeAlive=false;
+    for(int mode=0;mode<3;++mode) {
+        MovementSettings settings;settings.classicCollision=mode==0;settings.platformRecovery=mode==2;
+        MovementPhysics swimmer;swimmer.Configure(settings);swimmer.Reset(300);WarcraftCollision river;
+        unitX=-200;unitY=0;
+        for(int frame=0;frame<150;++frame){river.UpdateWater(1,swimmer);swimmer.Step({},1.f/60,250);river.Move(1,swimmer,1.f/60);}
+        Require(swimmer.Swimming() && std::abs(swimmer.EyeZ()-312)<.05f,"deep water floats below the surface in every collision mode");
+        MoveInput paddle;paddle.forward=1;
+        for(int frame=0;frame<240;++frame){river.UpdateWater(1,swimmer);swimmer.Step(paddle,1.f/60,250);river.Move(1,swimmer,1.f/60);}
+        Require(unitX>600 && swimmer.Grounded() && !swimmer.Swimming(),"swimming exits through a shallow bank without native relocation");
+        canalBank=340;unitX=0;unitY=0;swimmer.Reset(216);river.Reset();
+        paddle.jump=true;
+        for(int frame=0;frame<120;++frame) {
+            river.UpdateWater(1,swimmer);river.PrepareWaterExit(1,swimmer,paddle);
+            swimmer.Step(paddle,1.f/60,250);river.Move(1,swimmer,1.f/60);paddle.jump=false;
+        }
+        Require(unitX>100 && swimmer.Grounded() && swimmer.FeetZ()==340,"fresh Space exits a vertical canal bank through swept collision");
+        canalBank=600;unitX=0;swimmer.Reset(216);river.Reset();paddle.jump=true;
+        for(int frame=0;frame<90;++frame) {
+            river.UpdateWater(1,swimmer);river.PrepareWaterExit(1,swimmer,paddle);
+            Require(!paddle.waterExit,"unreachable walls cannot authorize a water exit");
+            swimmer.Step(paddle,1.f/60,250);river.Move(1,swimmer,1.f/60);
+        }
+        Require(unitX<60 && swimmer.Swimming(),"holding Space cannot climb a high canal wall");
+        canalBank=0;paddle.jump=false;
+        swimWall=true;unitX=0;unitY=0;swimmer.Reset(216);river.Reset();
+        for(int frame=0;frame<120;++frame){river.UpdateWater(1,swimmer);swimmer.Step(paddle,1.f/60,250);river.Move(1,swimmer,1.f/60);}
+        Require(unitX<60,"floatability cannot bypass an underwater solid wall");swimWall=false;
+        swimNativeBlocked=true;unitX=0;swimmer.Reset(216);river.Reset();
+        for(int frame=0;frame<60;++frame){river.UpdateWater(1,swimmer);swimmer.Step(paddle,1.f/60,250);river.Move(1,swimmer,1.f/60);}
+        Require(unitX==0,"a native floating restriction remains authoritative in real water");swimNativeBlocked=false;
+        bridgeAlive=true;deckHeight=400;unitX=0;swimmer.Reset(400);river.Reset();
+        for(int frame=0;frame<60;++frame){river.UpdateWater(1,swimmer);swimmer.Step({},1.f/60,250);river.Move(1,swimmer,1.f/60);}
+        Require(swimmer.Grounded() && !swimmer.Swimming() && swimmer.FeetZ()==400,"water under an actual bridge does not submerge its rider");bridgeAlive=false;
+        actorFlight=200;unitX=0;swimmer.Reset(300);river.Reset();
+        for(int frame=0;frame<60;++frame){river.UpdateWater(1,swimmer);swimmer.Step({},1.f/60,250);river.Move(1,swimmer,1.f/60);}
+        Require(!swimmer.Swimming() && swimmer.FeetZ()==300,"native flight retains its prior water support instead of becoming swimming");actorFlight=0;
+    }
+    swimScene=false;
+    std::puts("Swimming collision passed: classic/hull/recovery, native water pathing, shallow exits, solids and bridge riders.");
 }

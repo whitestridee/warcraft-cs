@@ -3,6 +3,7 @@
 #include <cmath>
 
 void MovementPhysics::Reset(float floor) {
+    water_={};swimming_=waterJump_=false;waterAllowed_=true; // Map, actor and cargo resets cannot retain another pool's buoyancy.
     vx_ = vy_ = vz_ = duck_ = 0; feetZ_ = floor;
     previousFeetZ_ = floor; previousDuck_=0;
     grounded_ = true; jumpHeld_ = jumpSuppressed_ = false;
@@ -18,6 +19,23 @@ void MovementPhysics::Step(const MoveInput& input, float dt, float weaponSpeed) 
     if (!dt) return;
     previousFeetZ_ = feetZ_;
     previousDuck_=duck_;
+    if(swimming_) {
+        if(input.waterExit && input.jump && !jumpHeld_ && !jumpSuppressed_ && !input.immobilized && settings_.swimming.exitHeight>0) {
+            // A fresh Space at a bank gets a bounded ballistic exit. Repeated contact updates must
+            // not replace its ascent with buoyancy; no ground/bunnyhop impulse is awarded.
+            float rise=std::max(0.f,water_.surface+settings_.swimming.exitHeight-feetZ_);
+            vz_=std::sqrt(2*settings_.gravity*worldScale*rise);
+            swimming_=false;waterJump_=true;jumpHeld_=true;
+            // A shore exit needs forward travel even when the wall has already stopped paddling.
+            // Replace, rather than add to, horizontal speed so repeated exits cannot mint momentum.
+            float speed=std::max(0.f,weaponSpeed)*worldScale*settings_.swimming.speedPercent/100;
+            float length=std::hypot(input.forward,input.right),angle=input.yaw*.01745329252f;
+            if(length>.01f) {
+                vx_=speed*(input.forward*std::cos(angle)+input.right*std::sin(angle))/length;
+                vy_=speed*(input.forward*std::sin(angle)-input.right*std::cos(angle))/length;
+            } else LimitSpeed(speed);
+        } else {Swim(input,dt,weaponSpeed);return;}
+    }
     // Smooth stance changes avoid teleporting the camera when Ctrl is pressed.
     float targetDuck = input.duck ? 1.0f : 0.0f;
     // Incapacitation freezes even an in-progress crouch; roots alone still permit stance changes.
@@ -73,6 +91,48 @@ void MovementPhysics::Step(const MoveInput& input, float dt, float weaponSpeed) 
         feetZ_ += vz_ * dt - 0.5f * gravity * dt * dt;
         vz_ -= gravity * dt;
     }
+}
+float MovementPhysics::FloatFeet() const {
+    return std::max(water_.bottom,water_.surface-(64-28*duck_)*worldScale+settings_.swimming.eyeAboveWater);
+}
+void MovementPhysics::SetWater(const WaterContact& water) {
+    bool wasSwimming=swimming_;
+    bool valid=water.present && std::isfinite(water.surface) && std::isfinite(water.bottom) && water.surface>water.bottom;
+    water_=valid ? water : WaterContact{}; // Rejected contact cannot leave a bogus wet flag or infinite water level.
+    // Keep the one exit impulse until landing or descending back to the floating body level.
+    if(waterJump_ && SwimmingEnabled() && valid && !grounded_ && (vz_>0 || feetZ_>FloatFeet()+.01f)) {
+        swimming_=false;return;
+    }
+    waterJump_=false;
+    // A small internal hysteresis avoids toggling at the deep/shallow boundary. Actual deck support
+    // above the float body retains walking; airborne actors enter only when they reach the water.
+    float threshold=settings_.swimming.minimumDepth-(wasSwimming ? std::min(12.f,settings_.swimming.minimumDepth*.1f) : 0);
+    swimming_=SwimmingEnabled() && valid && water.surface-water.bottom>=threshold &&
+        feetZ_<=water.surface+settings_.stepHeight && (!grounded_ || feetZ_<=FloatFeet()+settings_.stepHeight);
+    if(swimming_) {grounded_=false;if(!wasSwimming)vz_=0;}
+    else if(wasSwimming)vz_=0; // Returning to shore resumes ordinary gravity without a buoyancy impulse.
+}
+void MovementPhysics::Swim(const MoveInput& input,float dt,float weaponSpeed) {
+    const auto& water=settings_.swimming;
+    // Surface swimming has no ground takeoff, bunnyhop gain or airborne strafe acceleration.
+    // Stuns/roots stop paddling but do not pin the body below the surface.
+    if(!input.stanceLocked)duck_+=std::clamp(-duck_,-dt/.2f,dt/.2f);
+    jumpHeld_=input.jump;if(!input.jump)jumpSuppressed_=false;else if(input.immobilized)jumpSuppressed_=true;
+    if(input.immobilized)Stop();
+    float drag=std::exp(-water.drag*dt);vx_*=drag;vy_*=drag;
+    float speed=std::max(0.f,weaponSpeed)*worldScale*water.speedPercent/100;
+    if(input.walk)speed*=.52f;
+    float length=input.immobilized ? 0 : std::hypot(input.forward,input.right);
+    if(length>0) {
+        float angle=input.yaw*.01745329252f;
+        float wx=(input.forward*std::cos(angle)+input.right*std::sin(angle))/length;
+        float wy=(input.forward*std::sin(angle)-input.right*std::cos(angle))/length;
+        float add=std::clamp(speed-vx_*wx-vy_*wy,0.f,water.acceleration*speed*dt);
+        vx_+=wx*add;vy_+=wy*add;
+    }
+    LimitSpeed(speed);
+    float change=(FloatFeet()-feetZ_)*(1-std::exp(-dt/water.floatSeconds));
+    feetZ_+=change;vz_=change/dt;grounded_=false;
 }
 void MovementPhysics::ResolveFloor(float floor) {
     MovementSurface surface;surface.height=floor;ResolveSurface(surface);

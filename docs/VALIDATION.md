@@ -1,5 +1,23 @@
 # Validation
 
+## Surface swimming and canal exits (2026-11-01, unreleased)
+
+Portable physics checks cover finite buoyancy at 30/60/144 Hz, depth hysteresis, capped paddling,
+roots, airborne entry, opt-out and a bounded single shore-exit arc. Classic/hull/recovery collision
+checks cover actual liquid versus dry blockers, floatability mask 6, shallow exits, a vertical canal
+bank with a native blocked cliff rim, rejection of high walls, solid underwater walls, bridge riders
+and preservation of native flight. Real settings, repeated installer merges, existing movement,
+third-person and camera-height regressions pass.
+
+An authored offline basin uses `tests/fixtures/Swimming.j` in the isolated owned 1.26a lab.
+OpenGL and Direct3D both report native water 166.4 above bed 0, floating feet 82.4, and camera/aim
+eye 178.4. Real forward/Space input exits the bank and lands on dry terrain at 256; ordinary shallow
+exit, gunfire, all three movement modes, F8 disable/re-enable and a native flying actor also pass.
+OpenGL FPS/TPS frames were inspected, including the body lift relative to its actual native sprite
+base. Direct3D assertions verify native movement/camera state; no Direct3D capture is claimed.
+Files and Save are restored by hash. These scenes/input mailboxes are excluded from normal Player
+builds. Real 1.27a swimming, every custom water material and complete campaign coverage remain unverified.
+
 ## Militia alarm crash fix (2026-11-01, unreleased)
 
 An authored offline 1.26a map (`tests/fixtures/MilitiaAlarm.j`) raises the stock Town Hall

@@ -4,6 +4,16 @@ $root=Split-Path -Parent $PSScriptRoot
 $folder=Join-Path $root ('.local/config-merge-'+[guid]::NewGuid().ToString('N'))
 New-Item -ItemType Directory -Path $folder -Force | Out-Null
 $template=Join-Path $root 'config/WarcraftCS.ini'
+# Surface swimming fills old clients while retaining explicit opt-outs and custom water tuning on repeat updates.
+$waterFile=Join-Path $folder 'swimming.ini'
+@('[Movement]','Mode=classic','[Swimming]','Enabled=false','MinimumDepth=144','SpeedPercent=42','FloatSeconds=0.4','ExitHeight=0','[Mouse]','Sensitivity=1.7') | Set-Content $waterFile
+Update-GameplayConfig $template $waterFile
+$waterText=Get-Content $waterFile -Raw
+foreach($required in @('Enabled=false','MinimumDepth=144','SpeedPercent=42','FloatSeconds=0.4','EyeAboveWater=12','Acceleration=6','Drag=4','ExitHeight=0','ExitReach=128','Mode=classic','Sensitivity=1.7')) {
+    if(!$waterText.Contains($required)){throw "Swimming settings merge lost $required"}
+}
+$waterHash=(Get-FileHash $waterFile).Hash;Update-GameplayConfig $template $waterFile
+if((Get-FileHash $waterFile).Hash -ne $waterHash){throw 'Swimming preferences changed during repeated update.'}
 # Previous energy stock values upgrade once; later edits back to those values must survive reinstallation.
 foreach($custom in @($false,$true)) {
     $energyConfig=Join-Path $folder ('energy-'+$custom+'.ini')

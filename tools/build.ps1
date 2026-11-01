@@ -121,6 +121,7 @@ if ($TestStatusEffects) {
 if ($TestGameplay) {
     $sources += '"' + (Join-Path $modRoot 'tests/RuneCombatScene.cpp') + '"'
     $sources += '"' + (Join-Path $modRoot 'tests/MilitiaMorphScene.cpp') + '"' # Bell/morph regression is never in Player builds.
+    $sources += '"' + (Join-Path $modRoot 'tests/SwimmingScene.cpp') + '"' # Native water observations stay opt-in.
     $testDefine += ' /DWCS_GAMEPLAY_TEST'
 }
 if ($TestTreeAndWheel) {

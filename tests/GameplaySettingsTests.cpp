@@ -15,6 +15,17 @@ int main() {
     // Headless regressions report assertion details to the captured journal instead of a desktop dialog.
     _set_error_mode(_OUT_TO_STDERR);
     GameplaySettings settings;
+    // The real startup/F8 parser validates water tuning without rewriting custom preferences.
+    const auto waterPath=(std::filesystem::current_path()/"swimming-validation.ini").string();
+    assert(settings.movement.swimming.enabled && settings.movement.swimming.minimumDepth==96);
+    {std::ofstream f(waterPath);f<<"[Swimming]\nEnabled=false\nMinimumDepth=132\nSpeedPercent=45\nFloatSeconds=.4\nEyeAboveWater=18\nExitHeight=0\nExitReach=80\n";}
+    auto waterConfig=GameplaySettings::Load(waterPath).movement.swimming;
+    assert(!waterConfig.enabled && waterConfig.minimumDepth==132 && waterConfig.speedPercent==45 && waterConfig.floatSeconds==.4f && waterConfig.eyeAboveWater==18);
+    assert(waterConfig.exitHeight==0 && waterConfig.exitReach==80);
+    {std::ofstream f(waterPath);f<<"[Swimming]\nEnabled=bad\nMinimumDepth=nan\nSpeedPercent=999\nAcceleration=-1\nDrag=inf\nFloatSeconds=0\nEyeAboveWater=999\n";}
+    waterConfig=GameplaySettings::Load(waterPath).movement.swimming;
+    assert(waterConfig.enabled && waterConfig.minimumDepth==96 && waterConfig.speedPercent==100 && waterConfig.acceleration==1 && waterConfig.drag==4 && waterConfig.floatSeconds==.05f && waterConfig.eyeAboveWater==48);
+    DeleteFileA(waterPath.c_str());
     // Missing, malformed and finite-bounded mouse values share the real startup/F8 configuration loader.
     const auto mousePath=(std::filesystem::current_path()/"mouse-menu-validation.ini").string();
     const std::pair<const char*,float> mouseCases[]={{"",1},{"nan",1},{"inf",1},{"bad",1},{"-1",.1f},{"0",.1f},{"12",5},{"1.75",1.75f}};

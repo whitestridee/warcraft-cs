@@ -22,6 +22,7 @@ Current release: [0.17.0 — downloads, upgrade and complete changes](RELEASE-0.
 | Page | What it covers |
 | --- | --- |
 | [Movement](MOVEMENT.md) | Air strafing, bunnyhopping, speed and collision settings |
+| [Surface swimming](SWIMMING.md) | Development-build deep water, buoyancy, shallow banks and editable water tuning |
 | [Weapon selection](WEAPON-SELECTION.md) | Carried groups, wheel preview and item-number mode |
 | [Arsenal, shops and army AI](ARSENAL-SHOPS-AI.md) | Buying, weapon tuning, grenades and army assistance |
 | [Half-Life arsenal](HALF-LIFE-ARSENAL.md) | Crowbar, Tau, Gluon, private conversion and tuning |

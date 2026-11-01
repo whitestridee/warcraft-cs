@@ -134,6 +134,12 @@ int main() {
     assert(profile.walk.index==1 && profile.run.index==2 && profile.takeoff.index==3 && profile.air.index==3);
     assert(profile.walkSpeed==100 && profile.runSpeed==300 && profile.run.seconds==1);
     assert(profile.attack.index==4 && std::abs(profile.SequenceAt(5).seconds-.75f)<.001f && profile.SequenceAt(999).index==-1);
+    assert(profile.swim.index==profile.walk.index && profile.swimStand.index==profile.stand.index);
+    // Amphibious sequences remain separate from dry locomotion; unknown rigs use authored walk/stand.
+    auto amphibian=model;amphibian.resize(12+8*132);uint32_t amphibianLength=8*132;std::memcpy(amphibian.data()+8,&amphibianLength,4);
+    for(int i=6;i<8;++i){auto at=12+i*132;const char* name=i==6 ? "Walk Swim" : "Stand Swim";std::memcpy(amphibian.data()+at,name,std::strlen(name));uint32_t end=1000;std::memcpy(amphibian.data()+at+84,&end,4);}
+    ModelMotionProfile waterProfile;waterProfile.Load(amphibian,"","amphibian",0);
+    assert(waterProfile.walk.index==1 && waterProfile.swim.index==6 && waterProfile.swimStand.index==7);
     model.resize(20);profile.Load(model,"","custom",0);assert(profile.walk.index==-1 && profile.runSpeed==0);
     // An old refill default must not reset a custom layout when the new dedicated entry key is absent.
     {std::ofstream file(path);file<<"[Shortcuts]\nRefill=F7\nSpeed=Y\n";}
