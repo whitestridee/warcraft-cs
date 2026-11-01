@@ -1,13 +1,13 @@
 # Download and upgrade
 
-- [**WarcraftCSLauncher_DLL_Included.exe**](https://github.com/YazgulDev/warcraft-cs/releases/download/v0.18.0/WarcraftCSLauncher_DLL_Included.exe) Р Р†Р вЂљРІР‚Сњ Player launcher with bundled project modules and private graphics components; no local C++ compilation.
-- [**WarcraftCSLauncher.exe**](https://github.com/YazgulDev/warcraft-cs/releases/download/v0.18.0/WarcraftCSLauncher.exe) Р Р†Р вЂљРІР‚Сњ Developer/source installation with consented dependency preparation and local compilation.
-- [**WarcraftCS-0.18.0-dist.zip**](https://github.com/YazgulDev/warcraft-cs/releases/download/v0.18.0/WarcraftCS-0.18.0-dist.zip) Р Р†Р вЂљРІР‚Сњ standard launcher, sources, update manifest, requirements and checksum. Public ZIPs contain no DLL/MIX modules.
-- [Sources](https://github.com/YazgulDev/warcraft-cs/releases/download/v0.18.0/WarcraftCS-sources.zip) Р вЂ™Р’В· [Update manifest](https://github.com/YazgulDev/warcraft-cs/releases/download/v0.18.0/WarcraftCS-update.json) Р вЂ™Р’В· [Player SHA256](https://github.com/YazgulDev/warcraft-cs/releases/download/v0.18.0/WarcraftCSLauncher_DLL_Included.exe.sha256) Р вЂ™Р’В· [Developer SHA256](https://github.com/YazgulDev/warcraft-cs/releases/download/v0.18.0/WarcraftCSLauncher.exe.sha256).
+- [**WarcraftCSLauncher_DLL_Included.exe**](https://github.com/YazgulDev/warcraft-cs/releases/download/v0.18.0/WarcraftCSLauncher_DLL_Included.exe) - Player launcher with bundled project modules and private graphics components; no local C++ compilation.
+- [**WarcraftCSLauncher.exe**](https://github.com/YazgulDev/warcraft-cs/releases/download/v0.18.0/WarcraftCSLauncher.exe) - Developer/source installation with consented dependency preparation and local compilation.
+- [**WarcraftCS-0.18.0-dist.zip**](https://github.com/YazgulDev/warcraft-cs/releases/download/v0.18.0/WarcraftCS-0.18.0-dist.zip) - standard launcher, sources, update manifest, requirements and checksum. Public ZIPs contain no DLL/MIX modules.
+- [Sources](https://github.com/YazgulDev/warcraft-cs/releases/download/v0.18.0/WarcraftCS-sources.zip) | [Update manifest](https://github.com/YazgulDev/warcraft-cs/releases/download/v0.18.0/WarcraftCS-update.json) | [Player SHA256](https://github.com/YazgulDev/warcraft-cs/releases/download/v0.18.0/WarcraftCSLauncher_DLL_Included.exe.sha256) | [Developer SHA256](https://github.com/YazgulDev/warcraft-cs/releases/download/v0.18.0/WarcraftCSLauncher.exe.sha256).
 
 Save progress and close Warcraft before updating. Use **Update from GitHub**, or install the new launcher into your existing dedicated mod folder, then restart Warcraft. Setup preserves saves, custom settings, controls, prices, renderer choices and opt-outs. Missing swimming keys are added automatically. The former stock RPG radius upgrades once; custom radii remain unchanged. This release adds no retail-asset conversion requirement. Original game files and converted assets are not distributed.
 
-## Warcraft CS 0.18.0 Р Р†Р вЂљРІР‚Сњ 2 November 2026
+## Warcraft CS 0.18.0 - 2 November 2026
 
 All changes since immutable **v0.17.0**: automatic swimming in deep water, bounded exits from canals, the visible militia-alarm crash fix, carried C4 in Bombs, and a larger ordinary RPG blast with distance falloff. Movement remains **classic** by default. The previous arsenal, economy, settings panel and nuclear RPG remain available.
 
@@ -24,14 +24,14 @@ Edit `[Swimming]` in `WarcraftCS.ini` and press **F8**; startup and live reload 
 | Key | Default | Range / units |
 | --- | --- | --- |
 | Enabled | true | false restores the previous water-support movement |
-| MinimumDepth | 96 | 32Р Р†Р вЂљРІР‚Сљ512 Warcraft units, with small exit hysteresis |
-| SpeedPercent | 65 | 10Р Р†Р вЂљРІР‚Сљ100% of current weapon/unit speed |
-| Acceleration | 6 | 1Р Р†Р вЂљРІР‚Сљ30 wish-direction acceleration multiplier |
-| Drag | 4 | 0Р Р†Р вЂљРІР‚Сљ20 momentum damping per second |
-| FloatSeconds | 0.2 | 0.05Р Р†Р вЂљРІР‚Сљ2 seconds; buoyancy response time |
-| EyeAboveWater | 12 | 0Р Р†Р вЂљРІР‚Сљ48 Warcraft units above the liquid plane |
-| ExitHeight | 128 | 0Р Р†Р вЂљРІР‚Сљ192 Warcraft units; exit apex above water, 0 disables shore exits |
-| ExitReach | 128 | 32Р Р†Р вЂљРІР‚Сљ192 Warcraft units; bank detection in the movement direction |
+| MinimumDepth | 96 | 32-512 Warcraft units, with small exit hysteresis |
+| SpeedPercent | 65 | 10-100% of current weapon/unit speed |
+| Acceleration | 6 | 1-30 wish-direction acceleration multiplier |
+| Drag | 4 | 0-20 momentum damping per second |
+| FloatSeconds | 0.2 | 0.05-2 seconds; buoyancy response time |
+| EyeAboveWater | 12 | 0-48 Warcraft units above the liquid plane |
+| ExitHeight | 128 | 0-192 Warcraft units; exit apex above water, 0 disables shore exits |
+| ExitReach | 128 | 32-192 Warcraft units; bank detection in the movement direction |
 
 See [Swimming](SWIMMING.md) and the [annotated INI](../config/WarcraftCS.ini). This is surface swimming; diving and drowning are not added. The experimental 1.27a host has no verified liquid adapter and retains its previous water movement.
 
@@ -43,9 +43,9 @@ Fix the 1.26a crash when a visible Town Hall raises an alarm and workers become 
 
 Carried **C4 now appears in Bombs (group 4)** with HE, Flashbang and Smoke. Its separate group 5 column is retired; **Half-Life stays on group 6**. Ownership IDs, buying and planting remain intact. Tab still starts in Warcraft item-number mode: turn that mode off for weapon category keys, or use the weapon wheel.
 
-Ordinary RPG stock radius increases **600 Р Р†РІР‚В РІР‚в„ў 1000 Warcraft units**, with **1800 peak fixed damage**. Existing linear three-dimensional distance falloff reaches zero at the edge: at distances 0 / 500 / 750 / 1000, a baseline unmodified blast contributes 1800 / 900 / 450 / 0 damage before host-specific protection or damage handling. Cover, friendly-fire rules and target filtering remain in effect. This changes the ordinary RPG; nuclear blast settings are independent.
+Ordinary RPG stock radius increases **600 -> 1000 Warcraft units**, with **1800 peak fixed damage**. Existing linear three-dimensional distance falloff reaches zero at the edge: at distances 0 / 500 / 750 / 1000, a baseline unmodified blast contributes 1800 / 900 / 450 / 0 damage before host-specific protection or damage handling. Cover, friendly-fire rules and target filtering remain in effect. This changes the ordinary RPG; nuclear blast settings are independent.
 
-`[RPG] Radius` accepts 32Р Р†Р вЂљРІР‚Сљ3000 and `Damage` accepts 0Р Р†Р вЂљРІР‚Сљ1000000. F8 applies edits to **newly launched rockets**; flying rockets retain their launch snapshot. `BlastVersion=4` migrates the former stock radius once, including older stock chains. Custom radii and explicit current-version choices remain saved. See [Half-Life RPG](HALF-LIFE-RPG.md) and [Weapon selection](WEAPON-SELECTION.md).
+`[RPG] Radius` accepts 32-3000 and `Damage` accepts 0-1000000. F8 applies edits to **newly launched rockets**; flying rockets retain their launch snapshot. `BlastVersion=4` migrates the former stock radius once, including older stock chains. Custom radii and explicit current-version choices remain saved. See [Half-Life RPG](HALF-LIFE-RPG.md) and [Weapon selection](WEAPON-SELECTION.md).
 
 ## Source, setup and verification
 

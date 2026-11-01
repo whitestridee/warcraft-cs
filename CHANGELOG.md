@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-## 0.18.0 — 2026-11-02
+## 0.18.0 - 2026-11-02
 
 - Publish [downloads, upgrade instructions and complete Release Notes](docs/RELEASE-0.18.0.md), both launchers, source-only public ZIPs, compact launcher summaries and updated movement/settings guides.
 
