@@ -40,6 +40,7 @@
 #ifdef WCS_GAMEPLAY_TEST
 #include "../../tests/RuneCombatScene.hpp"
 #include "../../tests/FramePresentationScene.hpp"
+#include "../../tests/MilitiaMorphScene.hpp"
 #endif
 #ifdef WCS_TREE_WHEEL_TEST
 #include "../../tests/TreeAndWheelScene.hpp"
@@ -173,10 +174,11 @@ static int __fastcall WorldHook(uintptr_t ui, uintptr_t unused) {
     lastWorld = now;
     // RenderWorld's this pointer is not CGameUI; query the real UI for cinematic flags.
     uintptr_t gameUI = CurrentUI(); ObserveMap(gameUI);
-    actorJumpView.End(); // Restore an unfinished prior frame before gameplay consumes render caches.
+    actorJumpView.End(); // Restore an unfinished prior frame before preparing native world rendering.
     // Lift the native channel ceiling before the FPS camera writes its validated distance.
     cameraFarClip.Update(healthy && controller.Visible());
-    if (healthy && gameUI) SafeTick(gameUI);
+    // Native animation/skinning already ran before RenderWorld. Gameplay callbacks can morph units
+    // (for example damage -> town alarm -> militia); run that tick only after this frame is drawn.
 #ifdef WCS_FLOATING_TEXT_TEST
     if (healthy && gameUI) FloatingTextScene::Tick(controller,gameBase,root);
 #endif
@@ -333,9 +335,17 @@ static void FinishFrame(HDC dc,const char* route) {
     if (healthy && worldReady) overlay.Draw(dc,controller,minimap,portrait,healthBars.Items(),healthBarView,healthNear,healthFar);
     else ReticleDiagnostics::Skip(healthy ? "world-frame-absent" : "controller-fault", 0, 0, GetTickCount() - lastWorld);
     overlayPass = false; nativeUIPhase = false;
+    // Every world-changing controller action must precede the next native pose update. In particular,
+    // a synchronous militia morph during a shot must not draw its replacement model with no bone matrices.
+    // The following frame consumes the resulting camera/actor/HUD snapshot; FPS and physics keep one tick per frame.
+    if(originalWorld && healthy && worldReady && currentUI)SafeTick(currentUI);
     // Creation during RenderWorld follows this frame's native skin update and can expose an unskinned birth model.
     // Execute economy/support orders after world AND UI submission, before the next frame's native animation update.
     if(healthy && worldReady)SafeArmyTick();
+#ifdef WCS_GAMEPLAY_TEST
+    // Morph fixtures must precede the NEXT native pose update, not create unskinned models during RenderWorld.
+    if(healthy && worldReady)MilitiaMorphScene::Tick(controller,root);
+#endif
     // Observe skipped frames too: a valid context alone does not establish an active FPS overlay.
     if (DiagnosticLog::Due(previous)) {
         RECT client = {}; if (window) GetClientRect(window, &client);

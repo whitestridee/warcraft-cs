@@ -1,5 +1,22 @@
 # Validation
 
+## Militia alarm crash fix (2026-11-01, unreleased)
+
+An authored offline 1.26a map (`tests/fixtures/MilitiaAlarm.j`) raises the stock Town Hall
+alarm synchronously from a real damage event. Ordinary FPS USP shots reproduce an access
+violation in `Game.dll+0x533A53`: a replacement worker model has no initialized bone matrices
+when controller gameplay runs between native skinning and RenderWorld. A direct bell issued
+at that unsafe phase reproduces the same fault; moving only the fixture after presentation
+does not fix the production-shot path.
+
+The corrected controller runs once after completed world/UI/HUD drawing, before the next
+native animation update. Repeated native shots, six-worker militia conversion and return
+pass in the isolated owned 1.26a OpenGL and Direct3D lab. Native walking/jumping and camera
+follow also pass; portable movement/camera and real hidden-WGL frame-boundary checks pass.
+The lab's modified files and Save are restored by hash after every run. Opt-in native scenes
+and their first-chance diagnostic observer are excluded from ordinary Player modules.
+These checks do not establish full campaign coverage or real 1.27a behavior.
+
 ## Release 0.17.0 (2026-10-31)
 
 See [the complete release validation and limitations](RELEASE-0.17.0.md#source-setup-and-verification). Native feature oracles use only the owned 1.26a lab in OpenGL and Direct3D, restoring its files/saves by hash. Actual XAudio2 sample cursors verify Gluon run/windup cancellation after release, menus, holster and F8; the authored shutdown cue decays separately. Full native-independent regressions and final launcher/package/install checks pass. Real 1.27a and RX580 OpenGL issue #10 remain unverified/unresolved.

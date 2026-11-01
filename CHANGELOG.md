@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Fix the visible militia-alarm crash on 1.26a: run controller gameplay after completed world/UI/HUD submission, before the next native animation update. Damage callbacks can replace worker models without drawing uninitialized bone matrices; keep one elapsed-time movement tick per frame and retain the 1.27a presentation fallback.
 - Move carried C4 into the Bombs group with grenades, hide its retired separate column and retain Half-Life on key 6. Preserve purchase/planting and stable inventory IDs.
 - Increase ordinary RPG stock radius from 600 to 1000 while retaining peak damage 1800 and linear 3D falloff to zero at the edge. BlastVersion=4 upgrades former stock once, preserving custom radii and explicit opt-backs; F8 affects new rockets only.
 

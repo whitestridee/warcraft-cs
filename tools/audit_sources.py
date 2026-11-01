@@ -12,7 +12,9 @@ ROOT_FILES = {'README.md','INSTALL.md','TROUBLESHOOTING.md','NOTICE','LICENSE-MI
               # Keep the explicit RoC entry point in source archives without allowing arbitrary batch files.
               '.gitattributes','setup.cmd','play.cmd','play-roc.bat','REQUIREMENTS.md',
               # Allow the owned support form explicitly without admitting arbitrary GitHub workflows or files.
-              '.github/DISCUSSION_TEMPLATE/q-a.yml'}
+              '.github/DISCUSSION_TEMPLATE/q-a.yml',
+              # This authored native-regression script is source; arbitrary extracted JASS remains excluded.
+              'tests/fixtures/MilitiaAlarm.j'}
 ROOTS = {'src','tests','tools','setup','config','skills','licenses','docs','launcher'}
 EXTENSIONS = {'.cpp','.hpp','.inc','.py','.ps1','.ini','.md','.yaml','.txt','.cs'}
 RULES = {

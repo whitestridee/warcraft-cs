@@ -1,0 +1,4 @@
+- Fixed the Warcraft III 1.26a crash when a visible Town Hall raises a militia alarm during combat.
+- Preserved native militia conversion and existing movement physics by scheduling gameplay before the next model update.
+- Changed carried C4 selection to the Bombs group while retaining Half-Life on key 6.
+- Changed ordinary RPG blast radius to 1000 with linear distance falloff and preserved custom settings.

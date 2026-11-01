@@ -355,6 +355,15 @@ draw those models before native skinning initializes their matrices. The next fr
 its normal model update before drawing newly constructed objects. Training reservations also
 survive Warcraft's zero-current-order reports and pause/background gaps.
 
+The verified 1.26a controller tick also executes at that completed frame boundary. Native skinning
+has already run by entry to RenderWorld: a shot issued there can synchronously trigger a Town Hall
+militia alarm, replacing a worker's model before it has bone matrices. Completing gameplay after
+drawing lets the next native animation pass initialize every replacement. World submission uses
+the preceding controller camera/body/HUD snapshot, with one elapsed-time tick per completed frame;
+movement rules and the unverified 1.27a API-presentation fallback retain their existing contracts.
+The opt-in MilitiaMorphScene runs only in gameplay-test builds after presentation; its authored
+MilitiaAlarm.j map script raises the ordinary bell from a real native damage event.
+
 `ViewmodelMotion` owns the visual-only speed/stance bob; `ViewmodelPose` crosses
 the controller/presentation boundary without changing camera or aim. `MuzzleFlashPulse`
 consumes accepted-shot serials once and starts their lifetime on presentation.
