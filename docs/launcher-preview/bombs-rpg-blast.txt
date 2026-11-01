@@ -1,0 +1,3 @@
+- Changed carried C4 selection to share Bombs with grenades, removing its separate column and keeping Half-Life on key 6.
+- Improved the ordinary RPG blast radius from 600 to 1000, retaining peak damage 1800 and linear distance falloff to zero at the edge.
+- Added one-time stock-radius migration while preserving custom tuning, cover, friendly fire and in-flight snapshots.

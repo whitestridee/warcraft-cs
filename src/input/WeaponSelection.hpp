@@ -12,12 +12,12 @@ public:
         if(!item)return 0;
         if(item->category==BuyCatalog::Category::HalfLife)return 6;
         if(WeaponSlots::Melee(slot))return 3;
-        if(WeaponSlots::Grenade(slot))return 4;
-        if(slot==WeaponSlots::C4)return 5;
+        // Plantable C4 shares the carried Bombs stack with thrown explosives; purchase slots stay unchanged.
+        if(WeaponSlots::Grenade(slot) || slot==WeaponSlots::C4)return 4;
         return item->category==BuyCatalog::Category::Pistols ? 2 : 1;
     }
     static const char* Label(int group) {
-        static const char* labels[]={"","PRIMARY","PISTOLS","MELEE","GRENADES","C4","HALF-LIFE"};
+        static const char* labels[]={"","PRIMARY","PISTOLS","MELEE","BOMBS","","HALF-LIFE"};
         return group>=1 && group<=WeaponSlots::SelectionGroups ? labels[group] : "";
     }
     static std::vector<int> Items(int group,const Available& available) {

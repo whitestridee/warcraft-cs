@@ -276,6 +276,17 @@ GameplaySettings GameplaySettings::Load(const std::string& filename) {
     // Repair tuning and Home's search radius share the existing validated F8 snapshot.
     result.movement.recoverInvalidPosition=boolean("RecoverInvalidPosition",true);
     result.movement.recoveryDistance=std::max(64.f,number("Movement","RecoveryDistance",512,2048));
+    // Startup and F8 share one finite, bounded water contract; setup only inserts missing preferences.
+    auto& swimming=result.movement.swimming;
+    swimming.enabled=enabled("Swimming","Enabled");
+    swimming.minimumDepth=std::max(32.f,number("Swimming","MinimumDepth",96,512));
+    swimming.speedPercent=std::max(10.f,number("Swimming","SpeedPercent",65,100));
+    swimming.acceleration=std::max(1.f,number("Swimming","Acceleration",6,30));
+    swimming.drag=number("Swimming","Drag",4,20);
+    swimming.floatSeconds=std::max(.05f,number("Swimming","FloatSeconds",.2f,2));
+    swimming.eyeAboveWater=number("Swimming","EyeAboveWater",12,48);
+    swimming.exitHeight=number("Swimming","ExitHeight",128,192);
+    swimming.exitReach=std::max(32.f,number("Swimming","ExitReach",128,192));
     result.runePickupRadius=number("Runes","PickupRadius",160,400);
     result.runeAmmoAllWeapons=_stricmp(text("Runes","AmmoWeapons","all").c_str(),"current")!=0;
     auto damageMode=text("Damage","Mode","unit");
@@ -554,7 +565,7 @@ GameplaySettings GameplaySettings::Load(const std::string& filename) {
     // Optional RPG defaults use the same bounded F8 snapshot, while availability comes only from owned caches.
     auto& rpg=result.rpg;rpg.enabled=enabled("RPG","Enabled");rpg.guidance=enabled("RPG","GuidanceByDefault");
     rpg.available=!result.warcraftOnly && OptionalWeaponAssets::Rpg(std::filesystem::path(filename).parent_path());
-    rpg.radius=std::max(32.f,number("RPG","Radius",600,3000));
+    rpg.radius=std::max(32.f,number("RPG","Radius",1000,3000));
     // Upgrade only the former stock blast, including an old config loaded directly with F8.
     auto blastVersion=text("RPG","BlastVersion","1");
     if((blastVersion=="1" || blastVersion.empty()) && rpg.radius==375)rpg.radius=525;
@@ -628,6 +639,8 @@ GameplaySettings GameplaySettings::Load(const std::string& filename) {
     };
     upgradeStock("RPG","DamageVersion",2,100,1800,result.damage[WeaponSlots::RPG]);
     upgradeStock("RPG","BlastVersion",3,525,600,rpg.radius);
+    // Expand the previous stock blast once; existing linear 3D falloff still reaches zero at the edge.
+    upgradeStock("RPG","BlastVersion",4,600,1000,rpg.radius);
     upgradeStock("HEGrenade","DamageVersion",3,300,600,result.damage[WeaponSlots::HE]);
     upgradeStock("M3","MultiplierVersion",2,3,6,result.heroMultiplier[WeaponSlots::M3]);
     upgradeStock("XM1014","MultiplierVersion",2,2.4f,4.8f,result.heroMultiplier[WeaponSlots::XM1014]);

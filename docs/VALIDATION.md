@@ -1,5 +1,44 @@
 # Validation
 
+## Surface swimming and canal exits (2026-11-01, unreleased)
+
+Portable physics checks cover finite buoyancy at 30/60/144 Hz, depth hysteresis, capped paddling,
+roots, airborne entry, opt-out and a bounded single shore-exit arc. Classic/hull/recovery collision
+checks cover actual liquid versus dry blockers, floatability mask 6, shallow exits, a vertical canal
+bank with a native blocked cliff rim, rejection of high walls, solid underwater walls, bridge riders
+and preservation of native flight. Real settings, repeated installer merges, existing movement,
+third-person and camera-height regressions pass.
+
+An authored offline basin uses `tests/fixtures/Swimming.j` in the isolated owned 1.26a lab.
+OpenGL and Direct3D both report native water 166.4 above bed 0, floating feet 82.4, and camera/aim
+eye 178.4. Real forward/Space input exits the bank and lands on dry terrain at 256; ordinary shallow
+exit, gunfire, all three movement modes, F8 disable/re-enable and a native flying actor also pass.
+OpenGL FPS/TPS frames were inspected, including the body lift relative to its actual native sprite
+base. Direct3D assertions verify native movement/camera state; no Direct3D capture is claimed.
+Files and Save are restored by hash. These scenes/input mailboxes are excluded from normal Player
+builds. Real 1.27a swimming, every custom water material and complete campaign coverage remain unverified.
+
+## Militia alarm crash fix (2026-11-01, unreleased)
+
+An authored offline 1.26a map (`tests/fixtures/MilitiaAlarm.j`) raises the stock Town Hall
+alarm synchronously from a real damage event. Ordinary FPS USP shots reproduce an access
+violation in `Game.dll+0x533A53`: a replacement worker model has no initialized bone matrices
+when controller gameplay runs between native skinning and RenderWorld. A direct bell issued
+at that unsafe phase reproduces the same fault; moving only the fixture after presentation
+does not fix the production-shot path.
+
+The corrected controller runs once after completed world/UI/HUD drawing, before the next
+native animation update. Repeated native shots, six-worker militia conversion and return
+pass in the isolated owned 1.26a OpenGL and Direct3D lab. Native walking/jumping and camera
+follow also pass; portable movement/camera and real hidden-WGL frame-boundary checks pass.
+The lab's modified files and Save are restored by hash after every run. Opt-in native scenes
+and their first-chance diagnostic observer are excluded from ordinary Player modules.
+These checks do not establish full campaign coverage or real 1.27a behavior.
+
+## Release 0.17.0 (2026-10-31)
+
+See [the complete release validation and limitations](RELEASE-0.17.0.md#source-setup-and-verification). Native feature oracles use only the owned 1.26a lab in OpenGL and Direct3D, restoring its files/saves by hash. Actual XAudio2 sample cursors verify Gluon run/windup cancellation after release, menus, holster and F8; the authored shutdown cue decays separately. Full native-independent regressions and final launcher/package/install checks pass. Real 1.27a and RX580 OpenGL issue #10 remain unverified/unresolved.
+
 ## Release 0.15.0 (2026-10-29)
 
 Source audit and native compilation pass. Fresh combined native runs on the owned 1.26a map pass six camera cases in each renderer (flat, level eye on a slope, ground following, standing, walking and jumping), with zero submitted-eye error after accounting for native getter latency. The same runs confirm portrait/minimap/item panels, native potion use and slot 3-to-5 moves, M/I controls and RTS/FPS transitions, with no ERROR records. Screenshots were inspected.

@@ -18,7 +18,7 @@ void UnitLocomotion::Release() {
     }
     ownsRate_=false;poseKnown_=false;
 }
-void UnitLocomotion::Update(wc3::Handle unit,double now,bool grounded,float speed,bool blocked,const ThirdPersonSettings& settings,bool walking) {
+void UnitLocomotion::Update(wc3::Handle unit,double now,bool grounded,float speed,bool blocked,const ThirdPersonSettings& settings,bool walking,bool swimming) {
     int type=wc3::GetUnitTypeId(unit);
     // An impact callback can kill the actor before the next status snapshot; never replace its death pose with a gait.
     if(!type || wc3::Real(wc3::GetUnitState(unit,0))<=.405f) {Release();return;}
@@ -31,7 +31,7 @@ void UnitLocomotion::Update(wc3::Handle unit,double now,bool grounded,float spee
         profile_.Load(NativeArchive::Read(model+".mdx"),std::string(metadata.begin(),metadata.end()),path,type);
         wc3::Log("Unit locomotion type=%08X walk=%s run=%s walkRef=%.1f runRef=%.1f",type,profile_.walk.name.c_str(),profile_.run.name.c_str(),profile_.walkSpeed,profile_.runSpeed);
     }
-    auto next=motion_.Update(now,grounded,speed,settings,walking);
+    auto next=motion_.Update(now,grounded || swimming,speed,settings,walking);
     if(blocked) {Release();return;}
     if(!settings.movementAnimations) {
         // An F8 opt-out stops our looping pose once; spell/attack owners never pass through this branch.
@@ -39,11 +39,11 @@ void UnitLocomotion::Update(wc3::Handle unit,double now,bool grounded,float spee
     }
     ObserveBaseRate();
     using Pose=HeroMotionState::Pose;
-    const auto& sequence=next==Pose::Run ? profile_.run : next==Pose::Walk ? profile_.walk :
+    const auto& sequence=swimming ? (speed>1 ? profile_.swim : profile_.swimStand) : next==Pose::Run ? profile_.run : next==Pose::Walk ? profile_.walk :
         next==Pose::Takeoff ? profile_.takeoff : next==Pose::Air ? profile_.air : next==Pose::Land ? profile_.land : profile_.stand;
     int actual=wc3::AnimationSequence(unit);
     bool overwritten=poseKnown_ && sequence.index>=0 && actual>=0 && actual!=sequence.index;
-    bool transition=!poseKnown_ || next!=pose_;
+    bool transition=!poseKnown_ || next!=pose_ || swimming_!=swimming;
     if(transition || overwritten) {
         // Never request an Arthas-only pose from another model or restart its gait every frame.
         // Shift changes pace without resetting a shared Walk cycle; shared leap clips also continue naturally.
@@ -51,7 +51,7 @@ void UnitLocomotion::Update(wc3::Handle unit,double now,bool grounded,float spee
         // Repair only a different live sequence; normal looping gaits never restart every frame.
         if(sequence.index>=0 && (!poseKnown_ || sequence.index!=sequence_ || overwritten))wc3::AnimateIndex(unit,sequence.index);
         sequence_=sequence.index;
-        pose_=next;poseKnown_=true;
+        pose_=next;poseKnown_=true;swimming_=swimming;
         if(transition)wc3::Log("Hero locomotion pose=%d grounded=%d speed=%.1f sequence=%s index=%d",int(next),grounded,speed,sequence.name.c_str(),sequence.index);
         // A persistent AI retry can overwrite every update; bounded telemetry keeps that repair from filling logs.
         if(overwritten && (lastRepair_==0 || GetTickCount()-lastRepair_>=1000)) {
@@ -65,8 +65,9 @@ void UnitLocomotion::Update(wc3::Handle unit,double now,bool grounded,float spee
         rate=settings.autoAnimationSpeed && reference>0 ? speed/reference : speed*sequence.seconds/settings.runCycleDistance;
         rate*=settings.animationSpeedMultiplier;
     }
-    if(next==Pose::Takeoff)rate=sequence.seconds/std::max(.02f,settings.takeoffDuration);
-    if(next==Pose::Land)rate=sequence.seconds/std::max(.02f,settings.landingDuration);
+    // Entering liquid is not a short jump/landing clip; water idle retains its authored normal rate.
+    if(!swimming && next==Pose::Takeoff)rate=sequence.seconds/std::max(.02f,settings.takeoffDuration);
+    if(!swimming && next==Pose::Land)rate=sequence.seconds/std::max(.02f,settings.landingDuration);
     if(sequence.index<0 || baselineRate_==0)rate=baselineRate_; // Missing sequences and map freezes remain native.
     Rate(rate);
 }

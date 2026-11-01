@@ -3,6 +3,7 @@
 #include "DiagnosticLog.hpp"
 #include "MovementWorldBounds.hpp"
 #include "UnitCollisionProfile.hpp"
+#include "MovementWater.hpp"
 #include <algorithm>
 #include <cmath>
 
@@ -47,9 +48,8 @@ float ClassicWarcraftCollision::Floor(float x, float y, const MovementPhysics& m
     if (wc3::WalkableSurface(x, y, deck)) {
         if(deck<=reachable+.01f) floor=std::max(floor,deck);
     } else {
-        // GetLocationZ also supplies native shallow-water support. Retain it when no overhead deck
-        // is present, rather than lowering a Warcraft walker onto the submerged terrain mesh.
-        floor=std::max(floor,wc3::Ground(x,y));
+        // Liquid-aware support uses the actual bed; an explicit swimming opt-out retains legacy water support.
+        floor=std::max(floor,MovementWater::Ground(x,y,movement));
     }
     // Use the same footprint as the side sweep: landing with a foot over a lip must catch its top
     // before the center crosses. Otherwise gravity sinks the feet below it and the next step hits its side.
@@ -95,6 +95,7 @@ bool ClassicWarcraftCollision::Clear(float x, float y, float oldX, float oldY, c
         }
         if (!wc3::IsTerrainPathable(&px, &py, 1)) continue;
         if (wc3::WalkableSurface(px, py, deck) && deck <= bottom + .01f) continue;
+        if(MovementWater::Passable(px,py,movement))continue;
         bool knownObject = false;
         for (const auto& box : obstacles) if (Overlaps(box, px, py, radius_) &&
             (box.maximum[2] <= bottom + .01f ||
@@ -110,6 +111,7 @@ bool ClassicWarcraftCollision::Clear(float x, float y, float oldX, float oldY, c
     return true;
 }
 void ClassicWarcraftCollision::Move(wc3::Handle unit, MovementPhysics& movement, float dt) {
+    MovementWater::Update(unit,movement);
     dt = std::clamp(dt, 0.f, .05f);
     float x = wc3::Real(wc3::GetUnitX(unit)), y = wc3::Real(wc3::GetUnitY(unit));
     float originalX = x, originalY = y;
@@ -124,7 +126,7 @@ void ClassicWarcraftCollision::Move(wc3::Handle unit, MovementPhysics& movement,
     auto obstacles = obstacles_.Snapshot(unit, x, y, 600 + std::hypot(dx, dy),movement.NativeUnitCollision());
     if (std::hypot(dx,dy)<.001f) {
         // Standing still needs floor resolution, but no collision rejection or blocked-movement telemetry.
-        movement.ResolveClassicFloor(Floor(x,y,movement,obstacles));return;
+        movement.ResolveClassicFloor(Floor(x,y,movement,obstacles));MovementWater::Update(unit,movement);return;
     }
     int steps = std::max(1, int(std::ceil(std::hypot(dx, dy) / 8)));
     // Eight-unit swept steps retain thin-wall collision at maximum bunnyhop speed.
@@ -171,4 +173,5 @@ void ClassicWarcraftCollision::Move(wc3::Handle unit, MovementPhysics& movement,
     x = wc3::Real(wc3::GetUnitX(unit)); y = wc3::Real(wc3::GetUnitY(unit));
     bounds.Constrain(unit,movement,x,y);
     movement.ResolveClassicFloor(Floor(x, y, movement, obstacles));
+    MovementWater::Update(unit,movement);
 }

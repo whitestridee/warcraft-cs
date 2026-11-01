@@ -162,6 +162,16 @@ The sweep owns approach/slide/retreat there, so native nearest-cell placement ne
 publishes a transient sprite relocation. Open-space unknown blockers retain native placement checks.
 `GameplaySettings` loads movement tuning; the controller applies that snapshot on startup and F8.
 
+`SwimmingSettings` and `WaterContact` extend the portable movement motor with surface buoyancy,
+bounded water speed and a separate drag/acceleration path. `WarcraftApi::WaterSurface` verifies the
+1.26a native liquid query used by GetLocationZ; it returns actual liquid presence/plane separately
+from terrain and walkable geometry. `MovementWater` shares contact, bridge-rider exclusion,
+bed support and native floatability policy across the two collision strategies. Solid/cliff
+sweeps remain authoritative. A directed shore probe permits one bounded Space exit arc without
+changing the collision solver or adding bunnyhop speed. The controller suppresses dry step/takeoff effects while swimming;
+`ModelMotionProfile`/`UnitLocomotion` select actual authored water clips or safe gait/idle fallback.
+The observing/input-driving `SwimmingScene` and authored Swimming.j map script are opt-in native fixtures.
+
 `RenderSettings` is part of that validated snapshot. `NativeFrameRate` verifies the supported native
 render-demand instruction, owns its one-byte in-memory override and paces presentation with the
 Windows performance counter and waitable timer. MaxFPS=0 restores the original operand. The runtime
@@ -354,6 +364,15 @@ Build orders can create birth models immediately; issuing them from the earlier 
 draw those models before native skinning initializes their matrices. The next frame now performs
 its normal model update before drawing newly constructed objects. Training reservations also
 survive Warcraft's zero-current-order reports and pause/background gaps.
+
+The verified 1.26a controller tick also executes at that completed frame boundary. Native skinning
+has already run by entry to RenderWorld: a shot issued there can synchronously trigger a Town Hall
+militia alarm, replacing a worker's model before it has bone matrices. Completing gameplay after
+drawing lets the next native animation pass initialize every replacement. World submission uses
+the preceding controller camera/body/HUD snapshot, with one elapsed-time tick per completed frame;
+movement rules and the unverified 1.27a API-presentation fallback retain their existing contracts.
+The opt-in MilitiaMorphScene runs only in gameplay-test builds after presentation; its authored
+MilitiaAlarm.j map script raises the ordinary bell from a real native damage event.
 
 `ViewmodelMotion` owns the visual-only speed/stance bob; `ViewmodelPose` crosses
 the controller/presentation boundary without changing camera or aim. `MuzzleFlashPulse`

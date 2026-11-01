@@ -174,7 +174,8 @@ bool ShooterController::Down(int key) const {
 #ifdef WCS_GAMEPLAY_TEST
     // Background fixtures must never interpret keys typed into the user's other applications.
     if(BackgroundGameplay::Enabled())return (key==VK_RBUTTON && GetTickCount()<testSecondaryUntil_) || (key==VK_LBUTTON && GetTickCount()<testAttackUntil_) ||
-        ((key==testWalkKey_ || (testWalking_ && key==settings_.shortcuts.Key(ShortcutAction::Walk))) && GetTickCount()<testWalkUntil_);
+        ((key==testWalkKey_ || (testWalking_ && key==settings_.shortcuts.Key(ShortcutAction::Walk)) ||
+          (testJumping_ && key==settings_.shortcuts.Key(ShortcutAction::Jump))) && GetTickCount()<testWalkUntil_);
 #endif
     return key>0 && key<256 && (GetAsyncKeyState(key) & 0x8000) != 0;
 }
@@ -437,11 +438,15 @@ void ShooterController::AimAndMove(float dt) {
     if(ThirdPerson() || UnitFirstPerson())speed=status_.nativeSpeed/MovementPhysics::worldScale;
     {
         float oldX = wc3::Real(wc3::GetUnitX(unit_)), oldY = wc3::Real(wc3::GetUnitY(unit_));
+        bool wasSwimming=movement_.Swimming();
+        collision_.UpdateWater(unit_,movement_); // Native liquid/deck contact selects water physics before acceleration.
+        collision_.PrepareWaterExit(unit_,movement_,input); // Space near a bank can leave buoyancy through the existing collision sweep.
         bool wasGrounded = movement_.Grounded();
         movement_.Step(input, dt, speed);
         if (status_.speedScale < 0.99f) movement_.LimitSpeed(speed * MovementPhysics::worldScale);
-        bool tookOff = wasGrounded && !movement_.Grounded();
+        bool tookOff = wasGrounded && !movement_.Grounded() && !movement_.Swimming();
         collision_.Move(unit_, movement_, dt);
+        if(wasSwimming!=movement_.Swimming())wc3::Log("movement swimming=%d water=%.1f feet=%.1f eye=%.1f",movement_.Swimming(),movement_.WaterLevel(),movement_.FeetZ(),movement_.EyeZ());
         // Transition records expose retained takeoff/landing momentum without per-frame disk writes.
         if (tookOff || ((!wasGrounded || tookOff) && movement_.Grounded()))
             wc3::Trace("movement contact takeoff=%d landed=%d speed=%.1f goldSrcSpeed=%.1f velocity=%.1f,%.1f,%.1f forward=%.0f right=%.0f yaw=%.2f",
@@ -451,13 +456,13 @@ void ShooterController::AimAndMove(float dt) {
         if (tookOff && movement_.Speed() >= 150.0f * MovementPhysics::worldScale) {
             SurfaceStep(1.0f); wc3::Log("jump sound: concrete takeoff");
         }
-        if ((!wasGrounded || tookOff) && movement_.Grounded()) {
+        if ((!wasGrounded || tookOff) && movement_.Grounded() && !wasSwimming && !movement_.Wet()) {
             // Normal CS ground landings use the same surface family instead of pl_jump2.
             SurfaceStep(0.85f); wc3::Log("jump sound: concrete landing");
         }
         // Distance actually travelled drives steps; walls and airborne motion stay silent.
         float dxMove = wc3::Real(wc3::GetUnitX(unit_)) - oldX, dyMove = wc3::Real(wc3::GetUnitY(unit_)) - oldY;
-        if (wasGrounded && movement_.Grounded()) {
+        if (wasGrounded && movement_.Grounded() && !movement_.Wet()) {
             float travelled = std::sqrt(dxMove * dxMove + dyMove * dyMove);
             if (travelled > 0.01f) stepDistance_ += travelled; else stepDistance_ = 0;
             float stride = input.duck ? 75.0f : 105.0f;
@@ -1644,7 +1649,7 @@ void ShooterController::Tick(uintptr_t ui) {
             Casting(),settings_,status_,hitboxes_,destructableHitboxes_))hits_.Record();
         // Native casts/stuns and the authored swing clip own the pose, while DPS recovery no longer freezes running.
         unitLocomotion_.Update(unit_,now*.001,movement_.Grounded(),movement_.Speed(),
-            Casting() || status_.incapacitated || status_.contained || status_.hidden || heroAttack_.Animating(now*.001),settings_.thirdPerson,Down(ShortcutAction::Walk) || movement_.Duck()>.5f);
+            Casting() || status_.incapacitated || status_.contained || status_.hidden || heroAttack_.Animating(now*.001),settings_.thirdPerson,Down(ShortcutAction::Walk) || movement_.Duck()>.5f,movement_.Swimming());
         // A separate read-only snapshot advertises the same contact without starting or advancing an attack.
         if(settings_.thirdPerson.showTargetIndicator && !Casting() && !status_.incapacitated && !status_.disarmed &&
             !status_.contained && !status_.hidden) {

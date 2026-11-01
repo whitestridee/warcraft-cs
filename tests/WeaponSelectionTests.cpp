@@ -1,6 +1,7 @@
 #include "../src/input/WeaponSelection.hpp"
 #include "../src/input/WeaponWheel.hpp"
 #include <limits>
+#include <string>
 #include <cassert>
 #include <cstdio>
 
@@ -15,7 +16,7 @@ int main() {
     // Every catalog entry remains reachable without a limit on carried weapon types.
     available.fill(true);bool seen[WeaponSlots::Count]={};int total=0;
     for(int group=1;group<=WeaponSlots::SelectionGroups;++group) {
-        auto items=WeaponSelection::Items(group,available);assert(!items.empty());menu.Close();
+        auto items=WeaponSelection::Items(group,available);if(group==5){assert(items.empty() && !*WeaponSelection::Label(group));continue;}assert(!items.empty());menu.Close();
         for(size_t i=0;i<items.size();++i) {
             assert(menu.Category(group,-1,available,10));
             int slot=menu.Pending();assert(slot==items[i] && !seen[slot]);seen[slot]=true;++total;
@@ -23,6 +24,10 @@ int main() {
         assert(menu.Category(group,-1,available,11) && menu.Pending()==items.front());
     }
     assert(total==WeaponSlots::Count);
+    // C4 now cycles with grenades, without a duplicate column or changing the Half-Life shortcut.
+    assert(WeaponSelection::Group(WeaponSlots::C4)==4 && WeaponSelection::Group(WeaponSlots::RPG)==6);
+    assert(std::string(WeaponSelection::Label(4))=="BOMBS");
+    assert(!menu.Category(5,0,available,12));
     // The wheel must visit the visible primary rows before crossing into the pistol group.
     menu.Close();menu.Cycle(2,0,available,19);
     assert(menu.Pending()==WeaponSlots::AWP);
@@ -33,7 +38,7 @@ int main() {
     // Expected visible rows, including every category boundary; reversing retraces each individual step.
     const int ordered[]={0,1,WeaponSlots::AWP,WeaponSlots::MP5,WeaponSlots::P90,WeaponSlots::M249,
         WeaponSlots::M3,WeaponSlots::XM1014,WeaponSlots::TMP,WeaponSlots::UMP45,WeaponSlots::FAMAS,WeaponSlots::Galil,WeaponSlots::G3SG1,WeaponSlots::Pistol,WeaponSlots::Deagle,WeaponSlots::Glock,
-        WeaponSlots::Knife,WeaponSlots::Sword,WeaponSlots::HE,WeaponSlots::Flashbang,WeaponSlots::Smoke,WeaponSlots::C4,
+        WeaponSlots::Knife,WeaponSlots::Sword,WeaponSlots::C4,WeaponSlots::HE,WeaponSlots::Flashbang,WeaponSlots::Smoke,
         WeaponSlots::Crowbar,WeaponSlots::Tau,WeaponSlots::Gluon,WeaponSlots::RPG};
     for(int i=0;i<WeaponSlots::Count;++i) {
         menu.Close();menu.Cycle(1,ordered[i],available,23);
@@ -50,8 +55,8 @@ int main() {
     available.fill(false);available[0]=available[WeaponSlots::Pistol]=available[WeaponSlots::C4]=true;
     menu.Close();wheel.Add(-120*17);menu.Cycle(wheel.TakeSteps(),0,available,26);
     assert(menu.Pending()==WeaponSlots::C4); // 17 clicks traverse five full three-weapon laps, then two steps.
-    menu.Close();menu.Cycle(1,WeaponSlots::Smoke,available,27);assert(menu.Pending()==WeaponSlots::C4);
-    menu.Close();menu.Cycle(-1,WeaponSlots::Smoke,available,27);assert(menu.Pending()==WeaponSlots::Pistol);
+    menu.Close();menu.Cycle(1,WeaponSlots::Smoke,available,27);assert(menu.Pending()==0);
+    menu.Close();menu.Cycle(-1,WeaponSlots::Smoke,available,27);assert(menu.Pending()==WeaponSlots::C4);
     menu.Close();menu.Cycle(std::numeric_limits<long long>::min(),0,available,28);assert(menu.Pending()==WeaponSlots::Pistol);
     available.fill(true);
     // Browsing and timeout never mutate the equipped slot; expired/depleted choices cannot confirm.

@@ -14,7 +14,7 @@
 class ModelMotionProfile {
 public:
     struct Sequence {int index=-1;float seconds=1;std::string name;};
-    Sequence stand,walk,run,takeoff,air,land,attack;
+    Sequence stand,walk,run,takeoff,air,land,attack,swim,swimStand;
     Sequence SequenceAt(int index) const {for(const auto& clip:sequences_)if(clip.index==index)return clip;return {};}
     float walkSpeed=0,runSpeed=0;
     void Load(const std::vector<uint8_t>& bytes,const std::string& slk,const std::string& path,int type) {
@@ -48,6 +48,10 @@ public:
         stand=pick("stand");walk=pick("walk");run=pick("run",true);
         if(walk.index<0)walk=pick("swim");if(walk.index<0)walk=pick("fly");
         if(run.index<0)run=walk;if(walk.index<0)walk=run;
+        // Amphibious rigs can author separate Swim/Walk Swim/Stand Swim clips. Other models keep
+        // their real gait/idle rather than receiving a nonexistent universal swimming animation.
+        swim=pick("swim");if(swim.index<0)swim=pick("walk swim");if(swim.index<0)swim=walk;
+        swimStand=pick("stand swim");if(swimStand.index<0)swimStand=stand;
         // Real Jump wins; safe native ready/hit/stand poses cover models without an authored leap.
         takeoff=pick("jump");air=takeoff;land=pick("land");
         if(takeoff.index<0)takeoff=pick("stand hit");
