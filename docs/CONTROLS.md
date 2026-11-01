@@ -25,7 +25,9 @@ F9 keeps movement and ambience but hides the HUD and blocks player attacks, spel
 and inventory actions. Enemy basic attacks are blocked by default in this view;
 `[UnitView] PreventEnemyAttacks=false` allows them.
 
-Hold Space to repeat jumps. For air strafing, build speed with W, jump, release W,
+Deep water automatically enables [surface swimming](SWIMMING.md) on verified 1.26a. Move toward a reachable bank and press Space once to jump out; holding Space in open water does not repeat swimming jumps. Shallow water returns to walking.
+
+On dry ground, hold Space to repeat jumps. For air strafing, build speed with W, jump, release W,
 then alternate A with a left mouse turn and D with a right turn.
 See [movement](MOVEMENT.md) and [third-person control](THIRD-PERSON.md).
 

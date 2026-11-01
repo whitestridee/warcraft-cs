@@ -1,5 +1,9 @@
 # Validation
 
+## Release 0.18.0 (2026-11-02)
+
+See [the release verification and limits](RELEASE-0.18.0.md#source-setup-and-verification). Full native-independent regressions pass. Owned 1.26a OpenGL/Direct3D scenes verify swimming, canal exits, ordinary movement and militia morph stability; OpenGL water frames were inspected. Source audits and final launcher/package checks bind the native payload to the reviewed sources. Real 1.27a swimming is unavailable and RX580 issue #10 remains unresolved.
+
 ## Surface swimming and canal exits (2026-11-01, unreleased)
 
 Portable physics checks cover finite buoyancy at 30/60/144 Hz, depth hysteresis, capped paddling,

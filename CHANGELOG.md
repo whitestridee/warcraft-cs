@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 0.18.0 — 2026-11-02
+
+- Publish [downloads, upgrade instructions and complete Release Notes](docs/RELEASE-0.18.0.md), both launchers, source-only public ZIPs, compact launcher summaries and updated movement/settings guides.
+
 - Add automatic surface swimming on verified 1.26a native water in classic/hull/recovery, with configurable depth, speed, acceleration, drag, buoyancy and eye clearance. Space toward a nearby reachable bank launches a bounded exit from canals; exit height/reach are configurable. Wading uses the bed; bridge riders, solid walls and shore collision remain distinct. F8 reloads the settings and updates preserve custom values. Use authored third-person swim clips with walk/stand fallback; unsupported hosts retain previous movement.
 - Fix the visible militia-alarm crash on 1.26a: run controller gameplay after completed world/UI/HUD submission, before the next native animation update. Damage callbacks can replace worker models without drawing uninitialized bone matrices; keep one elapsed-time movement tick per frame and retain the 1.27a presentation fallback.
 - Move carried C4 into the Bombs group with grenades, hide its retired separate column and retain Half-Life on key 6. Preserve purchase/planting and stable inventory IDs.

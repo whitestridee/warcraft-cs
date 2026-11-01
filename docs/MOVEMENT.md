@@ -25,7 +25,7 @@ the center crosses, and support ends after the trailing foot leaves. Native clif
 lower-bank pathing cell; validated movement there avoids Warcraft's nearest-cell relocation.
 Map bounds and unsupported flat pathing cells remain blocked. Unknown custom models cannot grant
 permission to cross blocked pathing. Native cliff levels distinguish cliff faces from ordinary hills.
-Shallow-water support retains Warcraft's native height rather than dropping onto the submerged mesh.
+With `[Swimming] Enabled=true`, shallow water uses its actual terrain bed and deep water switches to surface swimming. Move toward a reachable bank and press Space once to leave a canal. Bridges and native flight retain separate support. See [swimming and its editable settings](SWIMMING.md); disabling swimming restores the previous water-support movement.
 
 World boundaries include the actor radius in every mode. An actor already outside is clamped
 back before floor resolution even while idle; motion along the edge and inward remains usable.

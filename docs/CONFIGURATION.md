@@ -33,6 +33,7 @@ prepares the private 1.26a graphics components automatically.
 | Topic | Guide |
 | --- | --- |
 | Air strafing, jumping and collision | [Movement](MOVEMENT.md) |
+| Deep water, buoyancy and canal exits | [Swimming](SWIMMING.md) |
 | Owned weapon groups and wheel preview | [Weapon selection](WEAPON-SELECTION.md) |
 | Firearms, prices, ammo, grenades and army AI | [Arsenal and shops](ARSENAL-SHOPS-AI.md) |
 | Rockets and laser guidance | [Half-Life RPG](HALF-LIFE-RPG.md) |
